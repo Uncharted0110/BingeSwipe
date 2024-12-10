@@ -50,6 +50,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   bool showFinalCard = false;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _rotationAnimation; // Rotation animation
 
   @override
   void initState() {
@@ -62,6 +63,11 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeOut,
+    ));
+
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
     ));
   }
 
@@ -120,62 +126,39 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     );
   }
 
-  Widget buildChoiceSelector() {
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-    decoration: BoxDecoration(
-      color: Colors.black,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white, width: 3),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ChoiceChip(
-          label: const Text("Movies", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          selected: selectedCategory == "Movies",
-          onSelected: (selected) {
-            if (selected) {
+  // Build the roller with swipe gesture to switch between Movies and Songs
+  Widget buildCategorySelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+             onTap: () {
+              // Toggle between "Movies" and "Songs" on every tap
               setState(() {
-                selectedCategory = "Movies";
-                restart();
+                selectedCategory = selectedCategory == "Movies" ? "Songs" : "Movies";
+                _animationController.forward(from: 0.0); // Trigger animation
               });
-            }
-          },
-          selectedColor: Colors.deepPurple,
-          checkmarkColor: Colors.white,
-          shadowColor: Colors.white,
-          backgroundColor: Colors.grey[300],
-          labelStyle: TextStyle(
-            color: selectedCategory == "Movies" ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
+            },
+            child: AnimatedBuilder(
+              animation: _rotationAnimation,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _rotationAnimation.value * 2 * 3.1415927, // 360 degrees rotation
+                  child: child,
+                );
+              },
+              child: Text(
+                selectedCategory,
+                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
           ),
-        ),
-        ChoiceChip(
-          label: const Text("Songs", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          selected: selectedCategory == "Songs",
-          onSelected: (selected) {
-            if (selected) {
-              setState(() {
-                selectedCategory = "Songs";
-                restart();
-              });
-            }
-          },
-          selectedColor: Colors.deepPurple,
-          checkmarkColor: Colors.white,
-          shadowColor: Colors.white,
-          backgroundColor: Colors.grey[300],
-          labelStyle: TextStyle(
-            color: selectedCategory == "Songs" ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +189,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
           ),
           Column(
             children: [
-              buildChoiceSelector(),
+              buildCategorySelector(), // Roller for selecting Movies or Songs
               Expanded(
                 child: Center(
                   child: showCards
