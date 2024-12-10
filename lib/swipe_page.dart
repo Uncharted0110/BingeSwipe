@@ -23,9 +23,9 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
       "image": "https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_QL75_UX380_CR0,0,380,562_.jpg",
     },
     {
-      "title": "Card 3",
+      "title": "(500) Days of Summer",
       "description": "This is the description of card 3.",
-      "image": "https://plus.unsplash.com/premium_photo-1733777499354-24a828fb2e86?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyfHx8ZW58MHx8fHx8",
+      "image": "https://m.media-amazon.com/images/M/MV5BMTk5MjM4OTU1OV5BMl5BanBnXkFtZTcwODkzNDIzMw@@._V1_QL75_UX380_CR0,12,380,562_.jpg",
     },
   ];
 
