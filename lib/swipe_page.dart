@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:http/http.dart' as http;
 
 class SwipePage extends StatefulWidget {
   const SwipePage({super.key});
@@ -9,23 +11,9 @@ class SwipePage extends StatefulWidget {
 }
 
 class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMixin {
-  final List<Map<String, String>> movieCardData = [
-    {
-      "title": "Whiplash",
-      "description": "This is the description of card 1.",
-      "image": "https://m.media-amazon.com/images/M/MV5BMTU0NzQ2ODQ0OF5BMl5BanBnXkFtZTgwOTM1NTE4MjE@._V1_FMjpg_UY2048_.jpg",
-    },
-    {
-      "title": "Interstellar",
-      "description": "This is the description of card 2.",
-      "image": "https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_QL75_UX380_CR0,0,380,562_.jpg",
-    },
-    {
-      "title": "(500) Days of Summer",
-      "description": "This is the description of card 3.",
-      "image": "https://m.media-amazon.com/images/M/MV5BMTk5MjM4OTU1OV5BMl5BanBnXkFtZTcwODkzNDIzMw@@._V1_QL75_UX380_CR0,12,380,562_.jpg",
-    },
-  ];
+  List<Map<String, dynamic>> movieCardData = [];
+  bool isLoading = true;
+  String error = '';
 
   final List<Map<String, String>> songCardData = [
     {
@@ -50,11 +38,12 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   bool showFinalCard = false;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _rotationAnimation; // Rotation animation
+  late Animation<double> _rotationAnimation;
 
   @override
   void initState() {
     super.initState();
+    fetchMovies();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -69,6 +58,36 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+  }
+
+  Future<void> fetchMovies() async {
+    const String baseUrl = 'http://127.0.0.1:5000/movies';
+    try {
+      final response = await http.get(Uri.parse(baseUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> movieData = json.decode(response.body);
+        setState(() {
+          movieCardData = movieData
+              .map((movie) => {
+                    "title": movie['\"title\"'] ?? "No Title",
+                    "description": movie['\"description\"'] ?? "No Description",
+                    "image": movie['\"image_url\"'] ?? "https://via.placeholder.com/300x200.png?text=Movie+Image",
+                  })
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = 'Failed to load movies: ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Failed to load movies: $e';
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -90,17 +109,33 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
             border: Border.all(color: Colors.white, width: 6),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-              ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.network(
+                  "https://via.placeholder.com/300x200.png?text=Image+Not+Found",
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                );
+              },
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Colors.black.withOpacity(0.8), Colors.transparent],
             ),
           ),
         ),
@@ -117,7 +152,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
               const SizedBox(height: 10),
               Text(
                 description,
-                style: const TextStyle(fontSize: 18, color: Colors.white),
+                style: const TextStyle(fontSize: 15, color: Colors.white),
               ),
             ],
           ),
@@ -134,18 +169,17 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           GestureDetector(
-             onTap: () {
-              // Toggle between "Movies" and "Songs" on every tap
+            onTap: () {
               setState(() {
                 selectedCategory = selectedCategory == "Movies" ? "Songs" : "Movies";
-                _animationController.forward(from: 0.0); // Trigger animation
+                _animationController.forward(from: 0.0);
               });
             },
             child: AnimatedBuilder(
               animation: _rotationAnimation,
               builder: (context, child) {
                 return Transform.rotate(
-                  angle: _rotationAnimation.value * 2 * 3.1415927, // 360 degrees rotation
+                  angle: _rotationAnimation.value * 2 * 3.1415927,
                   child: child,
                 );
               },
@@ -162,16 +196,37 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    // Handle loading state
+    if (isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Handle error state
+    if (error.isNotEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            error,
+            style: TextStyle(color: Colors.red, fontSize: 18),
+          ),
+        ),
+      );
+    }
+
     final cardData = selectedCategory == "Movies" ? movieCardData : songCardData;
     final finalCard = selectedCategory == "Movies"
         ? {
             "title": "Movie Finale",
-            "description": "This is the final movie card.",
+            "description": "No more movies to swipe!",
             "image": "https://via.placeholder.com/300x200.png?text=Final+Movie+Card",
           }
         : {
             "title": "Song Finale",
-            "description": "This is the final song card.",
+            "description": "No more songs to swipe!",
             "image": "https://via.placeholder.com/300x200.png?text=Final+Song+Card",
           };
 
@@ -189,7 +244,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
           ),
           Column(
             children: [
-              buildCategorySelector(), // Roller for selecting Movies or Songs
+              buildCategorySelector(),
               Expanded(
                 child: Center(
                   child: showCards
