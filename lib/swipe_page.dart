@@ -240,14 +240,17 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.deepPurple, Colors.blueAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('images/bg.jpg'), // Path to the image
+                fit: BoxFit.cover, // Ensures the image covers the screen
               ),
             ),
-          ),
+            child: Container(
+              color: Color.fromRGBO(0, 0, 0, 0.5), // Adds a semi-transparent black layer
+            ),
+          )
+          ,
           Column(
             children: [
               buildCategorySelector(),
