@@ -54,6 +54,32 @@ def get_movies():
     except Exception as e:
         logging.error(f"Error retrieving movies: {e}")
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/searchMovieByTitle', methods=['GET'])
+def search_movie_by_title():
+    title = request.args.get('title')  # Retrieve the title from query parameters
+    
+    if not title:
+        return jsonify({'error': 'Title parameter is required'}), 400
+
+    try:
+        # Search for movies with a matching title (case-insensitive)
+        movies = list(collection.find({'"title"' : {"$regex": title, "$options": "i"}}, {
+            '"title"': 1, 
+            '"description"': 1, 
+            '"image_url"' : 1,
+            '_id': 0
+        }))
+
+
+        if not movies:
+            return jsonify({'message': 'No movies found matching the title: ' + title}), 404
+        
+        return jsonify(movies), 200
+    except Exception as e:
+        logging.error(f"Error searching movies by title: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
