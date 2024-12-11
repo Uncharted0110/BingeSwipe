@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async'; // Import for debounce
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _SearchPageState createState() => _SearchPageState();
 }
 
 class _SearchPageState extends State<SearchPage> {
-  TextEditingController _controller = TextEditingController();
-  String _searchText = '';
+  final TextEditingController _controller = TextEditingController();
   List<Map<String, String>> _moviesData = [];
   String _errorMessage = '';
+  Timer? _debounce;
 
   Future<void> fetchMovies(String title) async {
     var url = "http://127.0.0.1:5000/searchMovieByTitle?title=$title";
@@ -28,6 +30,9 @@ class _SearchPageState extends State<SearchPage> {
                     'title': movie['"title"'] ?? 'No Title Available',
                     'description': movie['"description"'] ?? 'No Description Available',
                     'image_url': movie['"image_url"'] ?? '',
+                    'line': movie['"line"'] ?? 'No line',
+                    'r_year': movie['"r_year"'] ?? 'Not released',
+                    'genre': (movie['"genre"'] ?? []).join(', '),
                   })
               .toList();
           _errorMessage = '';
@@ -46,45 +51,160 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  void _showDescriptionPopup(BuildContext context, String title, String description) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Close'),
-                ),
-              ],
+void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true, // To allow scrolling and fit large content
+    backgroundColor: Colors.transparent, // Transparent background for the modal itself
+    builder: (context) {
+      // Get screen width using MediaQuery
+      double screenWidth = MediaQuery.of(context).size.width;
+      double screenHeight = MediaQuery.of(context).size.height;
+
+      // Set dynamic image width and height as a percentage of the screen size
+      double dynamicImageWidth = screenWidth * 0.35; // Image width = 30% of screen width
+      double dynamicImageHeight = screenHeight * 0.3; // Image height = 25% of screen height
+
+      // Set maxWidth dynamically based on the screen size
+      double dynamicMaxWidth = screenWidth * 0.6; // For example, 60% of screen width
+
+      return Container(
+        padding: const EdgeInsets.all(0),
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/bg.jpg'), // Replace with your image asset path
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken), // Darken the image for readability
+          ),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.7), // Content background color
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
             ),
           ),
-        );
-      },
-    );
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Row for the image (left) and movie title/description (right)
+              Row(
+                children: [
+                  // Left column with image, release year, and genre
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Movie image with dynamic width and height
+                      movie['image_url'] != ''
+                          ? Container(
+                              width: dynamicImageWidth, // Dynamic image width
+                              height: dynamicImageHeight, // Dynamic image height
+                              margin: const EdgeInsets.only(right: 15),
+                              child: Image.network(
+                                movie['image_url'] ?? '',
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : const SizedBox(), // Show nothing if image is unavailable
+
+                      const SizedBox(height: 10),
+
+                      // Release Year
+                      Text(
+                        'Release Year: ${movie['r_year'] ?? 'Not Released'}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 5),
+
+                      // Genre (genre will wrap if needed)
+                      Container(
+                        width: dynamicImageWidth, // Limit to dynamic image width
+                        child: Text(
+                          'Genre: ${movie['genre'] ?? 'No Genre'}',
+                          style: const TextStyle(fontSize: 16),
+                          overflow: TextOverflow.visible, // Allow genre text to wrap
+                          maxLines: 2, // Allow genre text to wrap into the next line if necessary
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(width: 15),
+
+                  // Right column with title and description
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Movie title with wrapping
+                        Text(
+                          movie['title'] ?? 'No Title Available',
+                          style: const TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold),
+                          softWrap: true, // Enable text wrapping
+                          overflow: TextOverflow.ellipsis, // Add ellipsis if title overflows
+                          maxLines: 2, // Allow title to wrap to 2 lines if necessary
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Movie description (wrapped text)
+                        Container(
+                          constraints: BoxConstraints(maxWidth: dynamicMaxWidth), // Dynamically set max width
+                          child: Text(
+                            movie['description'] ?? 'No Description Available',
+                            style: const TextStyle(fontSize: 16),
+                            textAlign: TextAlign.left,
+                            softWrap: true, // Wrap text to the next line
+                            overflow: TextOverflow.visible,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 15),
+
+              // Movie tagline or line at the bottom center (wrapped)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  '"${movie['line'] ?? 'No line'}"',
+                  style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                  textAlign: TextAlign.center,
+                  softWrap: true, // Allow the line to wrap if necessary
+                  overflow: TextOverflow.visible, // Allow it to wrap
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
+
+
+  void _onSearchTextChanged(String text) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (text.isNotEmpty) {
+        fetchMovies(text);
+      } else {
+        setState(() {
+          _moviesData = [];
+        });
+      }
+    });
   }
 
   @override
@@ -122,11 +242,7 @@ class _SearchPageState extends State<SearchPage> {
                           Expanded(
                             child: TextField(
                               controller: _controller,
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchText = value;
-                                });
-                              },
+                              onChanged: _onSearchTextChanged,
                               style: const TextStyle(color: Colors.white),
                               decoration: const InputDecoration(
                                 hintText: 'Search...',
@@ -138,15 +254,6 @@ class _SearchPageState extends State<SearchPage> {
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_searchText.isNotEmpty) {
-                          fetchMovies(_searchText);
-                        }
-                      },
-                      child: const Text('Search'),
                     ),
                     const SizedBox(height: 20),
                     // Display Results
@@ -164,7 +271,7 @@ class _SearchPageState extends State<SearchPage> {
                             final movie = _moviesData[index];
                             return GestureDetector(
                               onTap: () {
-                                _showDescriptionPopup(context, movie['title']!, movie['description']!);
+                                _showDescriptionPopup(context, movie);
                               },
                               child: Container(
                                 decoration: BoxDecoration(

@@ -68,6 +68,9 @@ def search_movie_by_title():
             '"title"': 1, 
             '"description"': 1, 
             '"image_url"' : 1,
+            '"line"' : 1,
+            '"r_year"' : 1,
+            '"genre"' : 1,
             '_id': 0
         }))
 
