@@ -24,7 +24,7 @@ except errors.ConnectionFailure as e:
 
 @app.route('/moviesSwipe', methods=['GET'])
 def get_movies():
-    random_numbers = random.sample(range(1, 5), 4)
+    random_numbers = random.sample(range(1, 6), 5)
 
     try:
         movies = []
