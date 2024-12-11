@@ -132,7 +132,7 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                           Text(
                             movie['title'],
                             style: const TextStyle(
-                                fontSize: 30, fontWeight: FontWeight.bold),
+                                fontSize: 30, fontWeight: FontWeight.bold, fontFamily: 'Oswald'),
                             softWrap: true,
                             overflow: TextOverflow.ellipsis,
                             maxLines: 2,
