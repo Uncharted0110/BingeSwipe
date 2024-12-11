@@ -61,7 +61,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   }
 
   Future<void> fetchMovies() async {
-    const String baseUrl = 'http://127.0.0.1:5000/movies';
+    const String baseUrl = 'http://127.0.0.1:5000/moviesSwipe';
     try {
       final response = await http.get(Uri.parse(baseUrl));
       if (response.statusCode == 200) {
@@ -97,11 +97,14 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   }
 
   void restart() {
-    setState(() {
-      showCards = true;
-      showFinalCard = false;
-    });
-  }
+  setState(() {
+    showCards = true;
+    showFinalCard = false;
+  });
+  
+  // Fetch movies again after restart
+  fetchMovies();
+}
 
   Widget buildCard(String title, String description, String imageUrl) {
   return Stack(
@@ -321,11 +324,19 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
               right: 16,
               child: FloatingActionButton(
                 onPressed: restart,
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
+                backgroundColor: const Color.fromARGB(255, 28, 15, 21),
+                foregroundColor: const Color.fromARGB(186, 255, 255, 255),
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: const Color.fromARGB(186, 255, 255, 255), // Set the border color to white
+                    width: 2, // Set the border width
+                  ),
+                  borderRadius: BorderRadius.circular(16), // Adjust the border radius if needed
+                ),
                 child: const Icon(Icons.replay),
               ),
-            ),
+            )
+            ,
         ],
       ),
     );

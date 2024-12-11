@@ -4,6 +4,7 @@ from pymongo import MongoClient, errors
 import logging
 import json
 from bson import ObjectId
+import random
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -21,11 +22,28 @@ try:
 except errors.ConnectionFailure as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
 
-@app.route('/movies', methods=['GET'])
+@app.route('/moviesSwipe', methods=['GET'])
 def get_movies():
+    random_numbers = random.sample(range(1, 4), 3)
+
     try:
+        movies = []
         # Retrieve movies with only title and description
-        movies = list(collection.find({}, {
+        movies = list(collection.find({"movie_id": random_numbers[0]}, {
+            '"title"': 1, 
+            '"description"': 1, 
+            '"image_url"' : 1,
+            '_id': 0
+        }))
+
+        movies += list(collection.find({"movie_id": random_numbers[1]}, {
+            '"title"': 1, 
+            '"description"': 1, 
+            '"image_url"' : 1,
+            '_id': 0
+        }))
+
+        movies += list(collection.find({"movie_id": random_numbers[2]}, {
             '"title"': 1, 
             '"description"': 1, 
             '"image_url"' : 1,
