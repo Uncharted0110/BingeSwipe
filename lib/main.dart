@@ -47,30 +47,44 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bottom Navigation Example'),
-        backgroundColor: Colors.teal,
-      ),
-      body: _sections[_selectedIndex], // Display the selected section
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex, // Highlight the selected item
-        onTap: _onItemTapped, // Handle the tap on navigation items
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.swipe),
-            label: 'Swipe',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
+  return Scaffold(
+    body: _sections[_selectedIndex], // Display the selected section
+    bottomNavigationBar: BottomNavigationBar(
+  backgroundColor: const Color.fromARGB(255, 28, 15, 21),
+  currentIndex: _selectedIndex, // Highlight the selected item
+  onTap: _onItemTapped, // Handle the tap on navigation items
+  items: [
+    BottomNavigationBarItem(
+      icon: _buildCircleIcon(Icons.search, 0),
+      label: 'Search',
+    ),
+    BottomNavigationBarItem(
+      icon: _buildCircleIcon(Icons.swipe, 1),
+      label: 'Swipe',
+    ),
+    BottomNavigationBarItem(
+      icon: _buildCircleIcon(Icons.person, 2),
+      label: 'Profile',
+    ),
+  ],
+  elevation: 0, // Remove shadow
+  selectedItemColor: const Color.fromARGB(186, 255, 255, 255), // Color for selected text
+  unselectedItemColor: Color(0x8A9E9E9E), // Color for unselected text
+),
+  );
+}
+
+Widget _buildCircleIcon(IconData icon, int index) {
+  return CircleAvatar(
+    radius: 20, // Size of the circle
+    backgroundColor: _selectedIndex == index
+        ? const Color.fromARGB(186, 255, 255, 255) // Color for the selected icon
+        : Color(0x8A9E9E9E), // Color for unselected icons
+    child: Icon(
+      icon,
+      color: const Color.fromARGB(255, 28, 15, 21),
+    ),
+  );
+}
+
 }

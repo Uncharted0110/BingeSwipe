@@ -156,7 +156,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
               duration: const Duration(seconds: 1),
               child: Text(
                 description,
-                style: const TextStyle(fontSize: 13, color: Colors.white),
+                style: const TextStyle(fontSize: 15, color: Colors.white),
               ),
             ),
           ],
@@ -242,7 +242,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('images/bg.jpg'), // Path to the image
+                image: AssetImage('assets/images/bg.jpg'), // Path to the image
                 fit: BoxFit.cover, // Ensures the image covers the screen
               ),
             ),
