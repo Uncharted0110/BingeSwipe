@@ -32,7 +32,9 @@ class _SearchPageState extends State<SearchPage> {
                     'image_url': movie['"image_url"'] ?? '',
                     'line': movie['"line"'] ?? 'No line',
                     'r_year': movie['"r_year"'] ?? 'Not released',
-                    'genre': (movie['"genre"'] ?? []).join(', '),
+                    'genre': (movie['"genre"'] ?? []).join(', ') ?? 'No genre',
+                    'cast' : (movie["cast"] ?? []).join(', ') ?? 'No cast',
+                    'director' : movie["director"] ?? 'No director', 
                   })
               .toList();
           _errorMessage = '';
@@ -54,27 +56,22 @@ class _SearchPageState extends State<SearchPage> {
 void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
   showModalBottomSheet(
     context: context,
-    isScrollControlled: true, // To allow scrolling and fit large content
-    backgroundColor: Colors.transparent, // Transparent background for the modal itself
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent, 
     builder: (context) {
-      // Get screen width using MediaQuery
       double screenWidth = MediaQuery.of(context).size.width;
       double screenHeight = MediaQuery.of(context).size.height;
 
-      // Set dynamic image width and height as a percentage of the screen size
-      double dynamicImageWidth = screenWidth * 0.35; // Image width = 30% of screen width
-      double dynamicImageHeight = screenHeight * 0.3; // Image height = 25% of screen height
-
-      // Set maxWidth dynamically based on the screen size
-      double dynamicMaxWidth = screenWidth * 0.6; // For example, 60% of screen width
+      double dynamicImageWidth = screenWidth * 0.45;
+      double dynamicImageHeight = screenHeight * 0.3;
 
       return Container(
         padding: const EdgeInsets.all(0),
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/bg.jpg'), // Replace with your image asset path
+            image: AssetImage('assets/images/bg.jpg'), 
             fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken), // Darken the image for readability
+            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken), 
           ),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
@@ -84,113 +81,116 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7), // Content background color
+            color: Colors.white.withOpacity(0.7), 
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Row for the image (left) and movie title/description (right)
-              Row(
-                children: [
-                  // Left column with image, release year, and genre
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Movie image with dynamic width and height
-                      movie['image_url'] != ''
-                          ? Container(
-                              width: dynamicImageWidth, // Dynamic image width
-                              height: dynamicImageHeight, // Dynamic image height
-                              margin: const EdgeInsets.only(right: 15),
-                              child: Image.network(
-                                movie['image_url'] ?? '',
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : const SizedBox(), // Show nothing if image is unavailable
-
-                      const SizedBox(height: 10),
-
-                      // Release Year
-                      Text(
-                        'Release Year: ${movie['r_year'] ?? 'Not Released'}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 5),
-
-                      // Genre (genre will wrap if needed)
-                      Container(
-                        width: dynamicImageWidth, // Limit to dynamic image width
-                        child: Text(
-                          'Genre: ${movie['genre'] ?? 'No Genre'}',
-                          style: const TextStyle(fontSize: 16),
-                          overflow: TextOverflow.visible, // Allow genre text to wrap
-                          maxLines: 2, // Allow genre text to wrap into the next line if necessary
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(width: 15),
-
-                  // Right column with title and description
-                  Expanded(
-                    child: Column(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Movie title with wrapping
-                        Text(
-                          movie['title'] ?? 'No Title Available',
-                          style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold),
-                          softWrap: true, // Enable text wrapping
-                          overflow: TextOverflow.ellipsis, // Add ellipsis if title overflows
-                          maxLines: 2, // Allow title to wrap to 2 lines if necessary
-                        ),
+                        movie['image_url'] != ''
+                            ? Container(
+                                width: dynamicImageWidth,
+                                height: dynamicImageHeight,
+                                margin: const EdgeInsets.only(right: 15),
+                                child: Image.network(
+                                  movie['image_url'] ?? '',
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const SizedBox(),
                         const SizedBox(height: 10),
-
-                        // Movie description (wrapped text)
-                        Container(
-                          constraints: BoxConstraints(maxWidth: dynamicMaxWidth), // Dynamically set max width
+                        Text(
+                          movie['r_year'] ?? 'Not Released',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 5),
+                        SizedBox(
+                          width: dynamicImageWidth, // Constrain width for wrapping
                           child: Text(
-                            movie['description'] ?? 'No Description Available',
+                            movie['genre'] ?? 'No Genre',
                             style: const TextStyle(fontSize: 16),
-                            textAlign: TextAlign.left,
-                            softWrap: true, // Wrap text to the next line
-                            overflow: TextOverflow.visible,
+                            softWrap: true,
+                            overflow: TextOverflow.visible, // Allow wrapping
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              // Movie tagline or line at the bottom center (wrapped)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  '"${movie['line'] ?? 'No line'}"',
-                  style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-                  textAlign: TextAlign.center,
-                  softWrap: true, // Allow the line to wrap if necessary
-                  overflow: TextOverflow.visible, // Allow it to wrap
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            movie['title'],
+                            style: const TextStyle(
+                                fontSize: 30, fontWeight: FontWeight.bold),
+                            softWrap: true,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 15),
+                          Text(
+                            'Director: ${movie['director']}',
+                            style: const TextStyle(fontSize: 16),
+                            softWrap: true,
+                            overflow: TextOverflow.visible,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Cast: ${movie['cast']}',
+                            style: const TextStyle(fontSize: 16),
+                            softWrap: true,
+                            overflow: TextOverflow.visible,
+                          ),
+                          
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 15),
+                Container(
+                  constraints: BoxConstraints(maxWidth: screenWidth),
+                  child: Text(
+                    movie['description'],
+                    style: const TextStyle(fontSize: 16),
+                    textAlign: TextAlign.start,
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      '"${movie['line']}"',
+                      style: const TextStyle(
+                        fontSize: 16, fontStyle: FontStyle.italic),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       );
     },
   );
 }
-
 
 
 
