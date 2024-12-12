@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:async'; // Import for debounce
+import 'movie_services.dart'; // Import the service functions
+import 'dart:async';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SearchPageState createState() => _SearchPageState();
 }
 
@@ -16,193 +14,54 @@ class _SearchPageState extends State<SearchPage> {
   List<Map<String, String>> _moviesData = [];
   String _errorMessage = '';
   Timer? _debounce;
+  String _searchType = 'Title'; // Default to Title search
 
-  Future<void> fetchMovies(String title) async {
-    var url = "http://127.0.0.1:5000/searchMovieByTitle?title=$title";
-    final response = await http.get(Uri.parse(url));
+  @override
+  void initState() {
+    super.initState();
+    _fetchAllMovies(); // Fetch all movies when the page loads
+  }
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      if (data.isNotEmpty) {
-        setState(() {
-          _moviesData = data
-              .map<Map<String, String>>((movie) => {
-                    'title': movie['"title"'] ?? 'No Title Available',
-                    'description': movie['"description"'] ?? 'No Description Available',
-                    'image_url': movie['"image_url"'] ?? '',
-                    'line': movie['"line"'] ?? 'No line',
-                    'r_year': movie['"r_year"'] ?? 'Not released',
-                    'genre': (movie['"genre"'] ?? []).join(', ') ?? 'No genre',
-                    'cast' : (movie["cast"] ?? []).join(', ') ?? 'No cast',
-                    'director' : movie["director"] ?? 'No director', 
-                  })
-              .toList();
-          _errorMessage = '';
-        });
-      } else {
-        setState(() {
-          _errorMessage = 'No movies found matching the title.';
-          _moviesData = [];
-        });
-      }
-    } else {
+  Future<void> _fetchAllMovies() async {
+    try {
+      List<Map<String, String>> movies = await fetchAllMovies();
       setState(() {
-        _errorMessage = 'Failed to fetch movies: ${response.statusCode}';
+        _moviesData = movies;
+        _errorMessage = '';
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
         _moviesData = [];
       });
     }
   }
 
-void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent, 
-    builder: (context) {
-      double screenWidth = MediaQuery.of(context).size.width;
-      double screenHeight = MediaQuery.of(context).size.height;
-
-      double dynamicImageWidth = screenWidth * 0.45;
-      double dynamicImageHeight = screenHeight * 0.3;
-
-      return Container(
-        padding: const EdgeInsets.all(0),
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/bg.jpg'), 
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken), 
-          ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7), 
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        movie['image_url'] != ''
-                            ? Container(
-                                width: dynamicImageWidth,
-                                height: dynamicImageHeight,
-                                margin: const EdgeInsets.only(right: 15),
-                                child: Image.network(
-                                  movie['image_url'] ?? '',
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : const SizedBox(),
-                        const SizedBox(height: 10),
-                        Text(
-                          movie['r_year'] ?? 'Not Released',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 5),
-                        SizedBox(
-                          width: dynamicImageWidth, // Constrain width for wrapping
-                          child: Text(
-                            movie['genre'] ?? 'No Genre',
-                            style: const TextStyle(fontSize: 16),
-                            softWrap: true,
-                            overflow: TextOverflow.visible, // Allow wrapping
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            movie['title'],
-                            style: const TextStyle(
-                                fontSize: 30, fontWeight: FontWeight.bold, fontFamily: 'Oswald'),
-                            softWrap: true,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: 15),
-                          Text(
-                            'Director: ${movie['director']}',
-                            style: const TextStyle(fontSize: 16),
-                            softWrap: true,
-                            overflow: TextOverflow.visible,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Cast: ${movie['cast']}',
-                            style: const TextStyle(fontSize: 16),
-                            softWrap: true,
-                            overflow: TextOverflow.visible,
-                          ),
-                          
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                Container(
-                  constraints: BoxConstraints(maxWidth: screenWidth),
-                  child: Text(
-                    movie['description'],
-                    style: const TextStyle(fontSize: 16),
-                    textAlign: TextAlign.start,
-                    softWrap: true,
-                    overflow: TextOverflow.visible,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      '"${movie['line']}"',
-                      style: const TextStyle(
-                        fontSize: 16, fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                      softWrap: true,
-                      overflow: TextOverflow.visible,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-
-
   void _onSearchTextChanged(String text) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
       if (text.isNotEmpty) {
-        fetchMovies(text);
+        try {
+          List<Map<String, String>> movies;
+          if (_searchType == 'Title') {
+            movies = await fetchMoviesByTitle(text);
+          } else if (_searchType == 'Genre'){
+            movies = await fetchMoviesByGenre(text);
+          } else {
+            movies = await fetchMoviesByActor(text);
+          }
+          setState(() {
+            _moviesData = movies;
+            _errorMessage = '';
+          });
+        } catch (e) {
+          setState(() {
+            _errorMessage = e.toString();
+            _moviesData = [];
+          });
+        }
       } else {
-        setState(() {
-          _moviesData = [];
-        });
+        _fetchAllMovies(); // Show all movies when search is cleared
       }
     });
   }
@@ -211,7 +70,7 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('images/bg.jpg'),
             fit: BoxFit.cover,
@@ -219,15 +78,16 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
         ),
         child: Stack(
           children: [
+            
             Container(color: Colors.black.withOpacity(0.5)),
             Align(
               alignment: Alignment.topCenter,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    SizedBox(height: 20.0),
                     // Search Box
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -244,13 +104,35 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                               controller: _controller,
                               onChanged: _onSearchTextChanged,
                               style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                hintText: 'Search...',
-                                hintStyle: TextStyle(color: Colors.white),
+                              cursorColor: Colors.white, // Change cursor color to white
+                              decoration: InputDecoration(
+                                hintText: 'Search by $_searchType',
+                                hintStyle: const TextStyle(color: Colors.grey),
                                 border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(vertical: 10.0),
                               ),
                             ),
+                          ),
+                          DropdownButton<String>(
+                            value: _searchType,
+                            dropdownColor: const Color.fromARGB(255, 28, 15, 21),
+                            items: <String>['Title', 'Genre', 'Actor'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16, // Adjusted font size
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _searchType = newValue!;
+                              });
+                            },
+                            underline: const SizedBox(), // Remove dropdown underline
                           ),
                         ],
                       ),
@@ -261,38 +143,33 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                       Expanded(
                         child: GridView.builder(
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // Number of cards per row
+                            crossAxisCount: 2,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
-                            childAspectRatio: 0.8, // Adjusted for card size
+                            childAspectRatio: 0.8,
                           ),
                           itemCount: _moviesData.length,
                           itemBuilder: (context, index) {
                             final movie = _moviesData[index];
                             return GestureDetector(
-                              onTap: () {
-                                _showDescriptionPopup(context, movie);
-                              },
+                              onTap: () => showDescriptionPopup(context, movie),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0), // Rounded corners
-                                  border: Border.all(color: Colors.white, width: 2), // White border
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  border: Border.all(color: Colors.grey, width: 2),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10), // Match border radius
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Stack(
                                     children: [
-                                      // Background Image
                                       movie['image_url'] != null && movie['image_url']!.isNotEmpty
                                           ? Image.network(
                                               movie['image_url']!,
+                                              fit: BoxFit.cover,
                                               width: double.infinity,
                                               height: double.infinity,
-                                              fit: BoxFit.cover, // Ensures the image fills the card space
                                             )
                                           : Container(
-                                              width: double.infinity,
-                                              height: double.infinity,
                                               color: Colors.grey,
                                               child: const Center(
                                                 child: Text(
@@ -301,22 +178,16 @@ void _showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                                                 ),
                                               ),
                                             ),
-                                      // Title Overlay
                                       Positioned(
                                         bottom: 0,
                                         left: 0,
                                         right: 0,
                                         child: Container(
-                                          padding: const EdgeInsets.all(8.0),
-                                          color: Colors.black.withOpacity(0.6), // Semi-transparent background for better readability
+                                          color: Colors.black.withOpacity(0.6),
                                           child: Text(
                                             movie['title'] ?? 'No Title',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
                                             textAlign: TextAlign.center,
+                                            style: const TextStyle(color: Colors.white, fontSize: 16),
                                           ),
                                         ),
                                       ),
