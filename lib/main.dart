@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'swipe_page.dart';
 import 'search_page.dart';
-import 'profile_page.dart';
+import 'playlist_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -36,7 +36,7 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
   final List<Widget> _sections = [
     SearchPage(),
     SwipePage(),
-    ProfilePage(),
+    PlaylistPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -63,8 +63,8 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
       label: 'Swipe',
     ),
     BottomNavigationBarItem(
-      icon: _buildCircleIcon(Icons.person, 2),
-      label: 'Profile',
+      icon: _buildCircleIcon(Icons.table_rows_rounded, 2),
+      label: 'Playlist',
     ),
   ],
   elevation: 0, // Remove shadow

@@ -141,14 +141,14 @@ class MovieListOverlay extends StatelessWidget {
   }
 }
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class PlaylistPage extends StatefulWidget {
+  const PlaylistPage({super.key});
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _PlaylistPageState createState() => _PlaylistPageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _PlaylistPageState extends State<PlaylistPage> {
   void _showMovieOverlay(String playlistName) {
     showModalBottomSheet(
       context: context,
