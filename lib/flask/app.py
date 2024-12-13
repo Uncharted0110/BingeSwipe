@@ -272,5 +272,31 @@ def signup():
     })
 
     return jsonify({"message": "Sign up successful!"}), 200
+
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    data = request.get_json()  # Get JSON data from the request
+    username = data.get('username')
+    new_password = data.get('new_password')
+
+    if not username or not new_password:
+        return jsonify({"message": "Username and new password are required"}), 400
+
+    # Check if the user exists in the database
+    user = User_collection.find_one({"username": username})
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Hash the new password
+    hashed_password = generate_password_hash(new_password)
+
+    # Update the user's password in the database
+    User_collection.update_one(
+        {"username": username},
+        {"$set": {"password": hashed_password}}
+    )
+
+    return jsonify({"message": "Password reset successful!"}), 200
+
 if __name__ == '__main__':
     app.run(debug=True)
