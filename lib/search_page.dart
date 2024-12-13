@@ -78,7 +78,6 @@ class _SearchPageState extends State<SearchPage> {
         ),
         child: Stack(
           children: [
-            
             Container(color: Colors.black.withOpacity(0.5)),
             Align(
               alignment: Alignment.topCenter,
@@ -87,7 +86,19 @@ class _SearchPageState extends State<SearchPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(height: 20.0),
+                    // Add a text search field above the existing search box
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        'Search Movies',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Oswald',
+                        ),
+                      ),
+                    ),
                     // Search Box
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
