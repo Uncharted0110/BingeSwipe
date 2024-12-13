@@ -5,6 +5,7 @@ import logging
 import json
 from bson import ObjectId
 import random
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -22,6 +23,7 @@ try:
     Genre_collection = db['Genre']
     Actor_collection = db['Actors']
     Playlist_collection = db["Playlist"]
+    User_collection = db["Users"]
 except errors.ConnectionFailure as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
 
@@ -235,5 +237,40 @@ def get_playlist(name):
         
     return jsonify(movies), 200
 
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()  # Get JSON data from the request
+    username = data.get('username')
+    password = data.get('password')
+
+    # Check if user exists in the database
+    user = User_collection.find_one({"username": username})
+
+    if user and check_password_hash(user['password'], password):
+        return jsonify({"message": "Login successful!"}), 200
+    else:
+        return jsonify({"message": "Invalid username or password"}), 400
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()  # Get JSON data from the request
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+
+    # Check if the username already exists
+    if User_collection.find_one({"username": username}):
+        return jsonify({"message": "Username already exists"}), 400
+
+    password = generate_password_hash(password)
+
+    # Insert new user into the database
+    User_collection.insert_one({
+        "username": username,
+        "password": password,
+        "email" : email
+    })
+
+    return jsonify({"message": "Sign up successful!"}), 200
 if __name__ == '__main__':
     app.run(debug=True)

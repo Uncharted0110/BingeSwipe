@@ -219,7 +219,7 @@ void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                 ),
                 const SizedBox(height: 20),
                 IconButton(
-                  icon: Icon(Icons.add_circle, size: 30),
+                  icon: Icon(Icons.playlist_add, size: 30),
                   onPressed: () async {
                     String? playlistName = await _showPlaylistDialog(context);
 
@@ -244,6 +244,7 @@ Future<String?> _showPlaylistDialog(BuildContext context) async {
   String? selectedPlaylist;
 
   return showDialog<String>(
+    // ignore: use_build_context_synchronously
     context: context,
     builder: (BuildContext context) {
       return StatefulBuilder(
