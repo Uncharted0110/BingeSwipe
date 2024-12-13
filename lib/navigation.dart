@@ -45,7 +45,7 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
           ),
           BottomNavigationBarItem(
             icon: _buildCircleIcon(Icons.table_rows_rounded, 2),
-            label: 'Playlista',
+            label: 'Playlists',
           ),
         ],
         elevation: 0, // Remove shadow
