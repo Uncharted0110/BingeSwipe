@@ -78,7 +78,7 @@ Widget _buildCircleIcon(IconData icon, int index) {
   return CircleAvatar(
     radius: 20, // Size of the circle
     backgroundColor: _selectedIndex == index
-        ? const Color.fromARGB(186, 255, 255, 255) // Color for the selected icon
+        ? const Color.fromARGB(212, 255, 255, 255) // Color for the selected icon
         : Color(0x8A9E9E9E), // Color for unselected icons
     child: Icon(
       icon,

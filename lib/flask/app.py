@@ -21,6 +21,7 @@ try:
     Movie_collection = db['Movies']
     Genre_collection = db['Genre']
     Actor_collection = db['Actors']
+    Playlist_collection = db["Playlist"]
 except errors.ConnectionFailure as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
 
@@ -56,6 +57,7 @@ def getAll_movies():
             '"genre"' : 1,
             "cast" : 1,
             "director" : 1,
+            "movie_id" : 1,
             '_id': 0
         }).limit(6))
         
@@ -82,6 +84,7 @@ def search_movie_by_title():
             '"genre"' : 1,
             "cast" : 1,
             "director" : 1,
+            "movie_id" : 1,
             '_id': 0
         }))
 
@@ -122,6 +125,7 @@ def search_movie_by_genre():
             '"genre"' : 1,
             "cast" : 1,
             "director" : 1,
+            "movie_id" : 1,
             '_id': 0
         }))
 
@@ -161,6 +165,7 @@ def search_movie_by_actor():
             '"genre"' : 1,
             "cast" : 1,
             "director" : 1,
+            "movie_id" : 1,
             '_id': 0
         }))
 
@@ -173,6 +178,62 @@ def search_movie_by_actor():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/add_to_playlist', methods=['POST'])
+def add_to_playlist():
+    data = request.get_json()
+
+    playlist_name = data['playlist_name']
+    movie_id = int(data['movie_id'])
+
+    if not playlist_name or not movie_id:
+        return jsonify({'error': 'Invalid input'}), 400
+
+    # Check if playlist exists
+    playlist = Playlist_collection.find_one({"name": playlist_name})
+    
+    if not playlist:
+        # If playlist doesn't exist, create a new one with the movie ID
+        Playlist_collection.insert_one({
+            "name": playlist_name,
+            "movie_id": [movie_id]
+        })
+    else:
+        # If playlist exists, add the movie ID to the list of movie IDs
+        Playlist_collection.update_one(
+            {"name": playlist_name},
+            {"$push": {"movie_id": movie_id}}
+        )
+
+    return jsonify({"message": "Movie added to playlist"}), 200
+
+
+@app.route('/get_playlists', methods=['GET'])
+def get_playlists():
+    playlists = list(Playlist_collection.find({}, {"name": 1, "_id": 0}))  # Modify based on your DB schema
+    return jsonify([playlist for playlist in playlists])
+
+@app.route('/get_playlist/<name>', methods=['GET'])
+def get_playlist(name):
+    # Query to find movies by name
+    playlist = Playlist_collection.find({"name": name}, {"movie_id": 1, "_id": 0})
+    
+    # Convert cursor to list
+    movie_ids = [movie['movie_id'] for movie in playlist]
+
+    movie_ids = [item for sublist in movie_ids for item in sublist]
+
+    # Fetch detailed movie data for the retrieved IDs
+    movies = list(Movie_collection.find({"movie_id": {"$in": movie_ids}}, {
+        '"title"': 1, 
+        '"description"': 1, 
+        '"image_url"' : 1,
+        '_id': 0
+    }))
+
+    if not movies:
+        return jsonify({'message': 'No movies retrieved for the actor'}), 404
+        
+    return jsonify(movies), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
