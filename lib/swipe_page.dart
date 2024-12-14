@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:bingeswipe/genre_analytics_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:provider/provider.dart';
 class SwipePage extends StatefulWidget {
   const SwipePage({super.key});
 
@@ -29,6 +31,55 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
 
   List<Map<String, dynamic>> swipedRightItems = [];
   Map<String, dynamic> finalCard = {};
+
+   // Analytics logic
+  Future<void> saveGenreAnalytics(List<Map<String, dynamic>> swipedRightMovies) async {
+    // Step 1: Extract genres from swiped-right movies
+    List<String> genres = [];
+    for (var movie in swipedRightMovies) {
+      if (movie["genre"] != null) {
+        final genreList = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
+        genres.addAll(genreList);
+      }
+    }
+
+    // Step 2: Calculate genre frequency
+    Map<String, int> genreFrequency = {};
+    for (var genre in genres) {
+      genreFrequency[genre] = (genreFrequency[genre] ?? 0) + 1;
+    }
+
+    // Step 3: Save analytics to a JSON file
+    final analytics = {
+      "totalMoviesLiked": swipedRightMovies.length,
+      "genresLiked": genreFrequency,
+    };
+
+    const filePath = "genre_analytics.json";
+    final file = File(filePath);
+
+    try {
+      await file.writeAsString(json.encode(analytics), flush: true);
+      print("Genre analytics saved successfully to $filePath");
+    } catch (e) {
+      print("Failed to save genre analytics: $e");
+    }
+
+    // Optional: Debug output
+    print("Genre Analytics: $analytics");
+  }
+
+   void _onMovieSwipeRight(Map<String, dynamic> movie) {
+    // Extract genres and update provider
+    final genres = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
+    Provider.of<GenreAnalyticsProvider>(context, listen: false).addMovieGenres(genres);
+  }
+
+  void _onSongSwipeRight(Map<String, dynamic> movie) {
+    // Extract genres and update provider
+    final genres = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
+    Provider.of<GenreAnalyticsProvider>(context, listen: false).addSongGenres(genres);
+  }
 
   @override
   void initState() {
@@ -359,6 +410,11 @@ Widget build(BuildContext context) {
                             swipedRightCount++;
                             print('Swiped Right: $swipedRightCount');
                             swipedRightItems.add(cardData[index]);
+                            if(selectedCategory == "Movies"){
+                            _onMovieSwipeRight(movieCardData[index]);
+                            }else{
+                              _onSongSwipeRight(songCardData[index]);
+                            }
                           } else if (direction == CardSwiperDirection.left) {
                             swipedLeftCount++;
                             print('Swiped Left: $swipedLeftCount');
@@ -388,7 +444,10 @@ Widget build(BuildContext context) {
                             }
                             
                           });
-
+                           // Step: Save genre analytics after recommendations are shown
+                        if (selectedCategory == "Movies") {
+                          await saveGenreAnalytics(swipedRightItems);
+                        }
                           await Future.delayed(const Duration(milliseconds: 300));
                           _animationController.forward();
                         },
