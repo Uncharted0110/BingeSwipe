@@ -20,16 +20,17 @@ try:
     client = MongoClient("mongodb+srv://test:jGPHvTinjd27yWoO@cluster0.qpv0m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     db = client['BingeSwipe']
     Movie_collection = db['Movies']
-    Genre_collection = db['Genre']
+    Genre_collection = db["MovieGenres"]
     Actor_collection = db['Actors']
     Playlist_collection = db["Playlist"]
     User_collection = db["Users"]
+    Song_collection = db["Songs"]
 except errors.ConnectionFailure as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
 
 @app.route('/moviesSwipe', methods=['GET'])
 def get_movies():
-    random_numbers = random.sample(range(1, 6), 3)
+    random_numbers = random.sample(range(18, 21), 3)
 
     try:
         movies = []
@@ -39,12 +40,33 @@ def get_movies():
                 '"title"': 1, 
                 '"description"': 1, 
                 '"image_url"': 1,
+                '"genre"' : 1,
                 '_id': 0
             }))
         
         return jsonify(movies), 200
     except Exception as e:
         logging.error(f"Error retrieving movies: {e}")
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/songsSwipe', methods=['GET'])
+def get_songs():
+    random_numbers = random.sample(range(1, 5), 3)
+
+    try:
+        songs = []
+
+        for song_id in random_numbers:
+            songs += list(Song_collection.find({"song_id": song_id}, {
+                "song": 1,
+                "genre" : 1,  
+                "image_url": 1,
+                '_id': 0
+            }))
+        
+        return jsonify(songs), 200
+    except Exception as e:
+        logging.error(f"Error retrieving songs: {e}")
         return jsonify({'error': str(e)}), 500
     
 @app.route('/getAllMovies', methods=['GET'])
@@ -60,7 +82,10 @@ def getAll_movies():
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
-            '_id': 0
+            '_id': 0,
+            "rating" : 1, 
+            "language": 1,
+
         }).limit(6))
         
         return jsonify(movies), 200
@@ -87,7 +112,9 @@ def search_movie_by_title():
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
-            '_id': 0
+            '_id': 0,
+            "rating" : 1, 
+            "language": 1,
         }))
 
 
@@ -128,7 +155,9 @@ def search_movie_by_genre():
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
-            '_id': 0
+            '_id': 0,
+            "rating" : 1, 
+            "language": 1,
         }))
 
         if not movies:
@@ -168,7 +197,9 @@ def search_movie_by_actor():
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
-            '_id': 0
+            '_id': 0,
+            "rating" : 1, 
+            "language": 1,
         }))
 
         if not movies:
@@ -297,6 +328,69 @@ def reset_password():
     )
 
     return jsonify({"message": "Password reset successful!"}), 200
+
+@app.route('/get_recommendation', methods=['POST'])
+def get_recommendation():
+    # Receive genre preferences from the client
+    data = request.get_json()
+    selected_category = data.get('category', 'Movies')
+    genre_preferences = data.get('genres', [])
+
+    # Select the appropriate collection based on category
+    collection = db['Movies'] if selected_category == 'Movies' else db['Songs']
+
+    # Different approach for Movies (array of genres) and Songs (string genre)
+    if selected_category == 'Movies':
+        # For movies, check if any of the movie's genres match the preferences
+        if genre_preferences:
+            recommendations = list(collection.aggregate([
+                {'$match': {'"genre"': {'$elemMatch': {'$in': genre_preferences}}}},
+                {'$sample': {'size': 1}}
+            ]))
+
+            # If no recommendations found with genre match, do a broader search
+            if not recommendations:
+                recommendations = list(collection.aggregate([
+                    {'$sample': {'size': 1}}
+                ]))
+        else:
+            # If no genre preferences, return a random movie
+            recommendations = list(collection.aggregate([
+                {'$sample': {'size': 1}}
+            ]))
+    else:
+        # For songs, do a direct string match
+        if genre_preferences:
+            recommendations = list(collection.aggregate([
+                {'$match': {'genre': {'$in': genre_preferences}}},
+                {'$sample': {'size': 1}}
+            ]))
+
+            # If no recommendations found with genre match, do a broader search
+            if not recommendations:
+                recommendations = list(collection.aggregate([
+                    {'$sample': {'size': 1}}
+                ]))
+        else:
+            # If no genre preferences, return a random song
+            recommendations = list(collection.aggregate([
+                {'$sample': {'size': 1}}
+            ]))
+
+    # If recommendations found, return the first one
+    if recommendations:
+        recommendation = recommendations[0]
+        # Remove MongoDB's internal _id field
+        recommendation.pop('_id', None)
+        return jsonify(recommendation)
+    
+    # Fallback if no recommendations
+    return jsonify({
+        "title": "No Rndations",
+        "description": "Try swiping on more cards!",
+        "image": "https://via.placeholder.com/300x200.png?text=No+Recommendation",
+        "genre": "N/A"
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

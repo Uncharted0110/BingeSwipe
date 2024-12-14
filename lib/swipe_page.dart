@@ -12,33 +12,23 @@ class SwipePage extends StatefulWidget {
 
 class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> movieCardData = [];
+  List<Map<String, dynamic>> songCardData = [];
   bool isLoading = true;
   String error = '';
-
-  final List<Map<String, String>> songCardData = [
-    {
-      "title": "Bohemian Rhapsody",
-      "description": "Queen's classic hit song.",
-      "image": "https://via.placeholder.com/300x200.png?text=Bohemian+Rhapsody",
-    },
-    {
-      "title": "Imagine",
-      "description": "John Lennon's timeless anthem.",
-      "image": "https://via.placeholder.com/300x200.png?text=Imagine",
-    },
-    {
-      "title": "Hotel California",
-      "description": "The Eagles' most iconic track.",
-      "image": "https://via.placeholder.com/300x200.png?text=Hotel+California",
-    },
-  ];
 
   String selectedCategory = "Movies"; // Default category
   bool showCards = true;
   bool showFinalCard = false;
+
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _rotationAnimation;
+
+  int swipedRightCount = 0;
+  int swipedLeftCount = 0;
+
+  List<Map<String, dynamic>> swipedRightItems = [];
+  Map<String, dynamic> finalCard = {};
 
   @override
   void initState() {
@@ -60,6 +50,62 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     ));
   }
 
+  Future<Map<String, dynamic>> getRecommendation() async {
+  try {
+    // Collect genre preferences from swiped items
+    List<String> genrePreferences = [];
+    
+    for (var item in swipedRightItems) {
+      if (selectedCategory == "Movies") {
+        // For movies, genre is already a list (or comma-separated string)
+        final genres = (item["genre"] is List) 
+            ? (item["genre"] as List).map((e) => e.toString()).toList()
+            : (item["genre"] as String).split(", ");
+        genrePreferences.addAll(genres);
+      } else {
+        // For songs, genre is a single string
+        final genre = item["genre"] as String;
+        genrePreferences.add(genre);
+      }
+    }
+
+    // Remove duplicates and take unique genres
+    genrePreferences = genrePreferences.toSet().toList();
+
+    // Make API call to get recommendation
+    final response = await http.post(
+      Uri.parse('http://127.0.0.1:5000/get_recommendation'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'category': selectedCategory,
+        'genres': genrePreferences
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final recommendation = json.decode(response.body);
+      return recommendation;
+    } else {
+      // Fallback if API call fails
+      return {
+        "title": "No Recommendations",
+        "description": "Try swiping on more cards!",
+        "image": "https://via.placeholder.com/300x200.png?text=No+Recommendation",
+        "genre": "N/A"
+      };
+    }
+  } catch (e) {
+    print('Recommendation error: $e');
+    return {
+      "title": "No Recommendations",
+      "description": "Error fetching recommendations",
+      "image": "https://via.placeholder.com/300x200.png?text=Error",
+      "genre": "N/A"
+    };
+  }
+}
+
+
   Future<void> fetchMovies() async {
     const String baseUrl = 'http://127.0.0.1:5000/moviesSwipe';
     try {
@@ -72,6 +118,7 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
                     "title": movie['\"title\"'] ?? "No Title",
                     "description": movie['\"description\"'] ?? "No Description",
                     "image": movie['\"image_url\"'] ?? "https://via.placeholder.com/300x200.png?text=Movie+Image",
+                    "genre": (movie['\"genre\"'] as List<dynamic>?)?.join(", ") ?? "No Genre",
                   })
               .toList();
           isLoading = false;
@@ -90,6 +137,37 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     }
   }
 
+ Future<void> fetchSongs() async {
+  const String baseUrl = 'http://127.0.0.1:5000/songsSwipe';
+  try {
+    final response = await http.get(Uri.parse(baseUrl));
+    if (response.statusCode == 200) {
+      final List<dynamic> songData = json.decode(response.body);
+      setState(() {
+        songCardData = songData
+            .map((song) => {
+                  "title": song["song"] ?? "No Title", // Use "song" key for title
+                  "description": song["genre"] ?? "No Genre",
+                  "genre": song["genre"],
+                  "image": song["image_url"] ?? "https://via.placeholder.com/300x200.png?text=Song+Image", // Correct image key
+                })
+            .toList();
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        error = 'Failed to load songs: ${response.statusCode}';
+        isLoading = false;
+      });
+    }
+  } catch (e) {
+    setState(() {
+      error = 'Failed to load songs: $e';
+      isLoading = false;
+    });
+  }
+}
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -102,11 +180,12 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     showFinalCard = false;
   });
   
-  // Fetch movies again after restart
   fetchMovies();
+  fetchSongs();
 }
 
   Widget buildCard(String title, String description, String imageUrl) {
+  
   return Stack(
     children: [
       Container(
@@ -182,7 +261,13 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
               setState(() {
                 selectedCategory = selectedCategory == "Movies" ? "Songs" : "Movies";
                 _animationController.forward(from: 0.0);
+                isLoading = true; // Show loading indicator while fetching data
               });
+              if (selectedCategory == "Movies") {
+                fetchMovies();
+              } else {
+                fetchSongs();
+              }
             },
             child: AnimatedBuilder(
               animation: _rotationAnimation,
@@ -203,142 +288,156 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Handle loading state
-    if (isLoading) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    // Handle error state
-    if (error.isNotEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Text(
-            error,
-            style: TextStyle(color: Colors.red, fontSize: 18),
-          ),
-        ),
-      );
-    }
-
-    final cardData = selectedCategory == "Movies" ? movieCardData : songCardData;
-    final finalCard = selectedCategory == "Movies"
-        ? {
-            "title": "Movie Finale",
-            "description": "No more movies to swipe!",
-            "image": "https://via.placeholder.com/300x200.png?text=Final+Movie+Card",
-          }
-        : {
-            "title": "Song Finale",
-            "description": "No more songs to swipe!",
-            "image": "https://via.placeholder.com/300x200.png?text=Final+Song+Card",
-          };
-
+@override
+Widget build(BuildContext context) {
+  if (isLoading) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/bg.jpg'), // Path to the image
-                fit: BoxFit.cover, // Ensures the image covers the screen
-              ),
-            ),
-            child: Container(
-              color: Color.fromRGBO(0, 0, 0, 0.5), // Adds a semi-transparent black layer
-            ),
-          )
-          ,
-          Column(
-            children: [
-              buildCategorySelector(),
-              Expanded(
-                child: Center(
-                  child: showCards
-                      ? CardSwiper(
-                          cardsCount: cardData.length,
-                          cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
-                            return LayoutBuilder(
-                              builder: (context, constraints) {
-                                final cardWidth = constraints.maxWidth * 0.9;
-                                final cardHeight = constraints.maxHeight * 1.0;
-                                return Center(
-                                  child: SizedBox(
-                                    width: cardWidth,
-                                    height: cardHeight,
-                                    child: buildCard(
-                                      cardData[index]["title"]!,
-                                      cardData[index]["description"]!,
-                                      cardData[index]["image"]!,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          threshold: 100,
-                          scale: 0.9,
-                          onEnd: () async {
-                            setState(() {
-                              showCards = false;
-                            });
-                            await Future.delayed(const Duration(milliseconds: 300));
-                            setState(() {
-                              showFinalCard = true;
-                            });
-                            _animationController.forward();
-                          },
-                        )
-                      : showFinalCard
-                          ? SlideTransition(
-                              position: _slideAnimation,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 300,
-                                  height: 450,
-                                  child: buildCard(
-                                    finalCard["title"]!,
-                                    finalCard["description"]!,
-                                    finalCard["image"]!,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : const Text(
-                              "No more cards to show!",
-                              style: TextStyle(fontSize: 24, color: Colors.grey),
-                            ),
-                ),
-              ),
-            ],
-          ),
-          // Add restart button after final card is shown
-          if (showFinalCard)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: FloatingActionButton(
-                onPressed: restart,
-                backgroundColor: const Color.fromARGB(255, 28, 15, 21),
-                foregroundColor: const Color.fromARGB(186, 255, 255, 255),
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    color: const Color.fromARGB(186, 255, 255, 255), // Set the border color to white
-                    width: 2, // Set the border width
-                  ),
-                  borderRadius: BorderRadius.circular(16), // Adjust the border radius if needed
-                ),
-                child: const Icon(Icons.replay),
-              ),
-            )
-            ,
-        ],
+      body: Center(
+        child: CircularProgressIndicator(),
       ),
     );
   }
+
+  if (error.isNotEmpty) {
+    return Scaffold(
+      body: Center(
+        child: Text(
+          error,
+          style: TextStyle(color: Colors.red, fontSize: 18),
+        ),
+      ),
+    );
+  }
+
+  final cardData = selectedCategory == "Movies" ? movieCardData : songCardData;
+
+  return Scaffold(
+    body: Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/bg.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Container(
+            color: Color.fromRGBO(0, 0, 0, 0.5),
+          ),
+        ),
+        Column(
+          children: [
+            buildCategorySelector(),
+            Expanded(
+              child: Center(
+                child: showCards
+                    ? CardSwiper(
+                        cardsCount: cardData.length,
+                        cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              final cardWidth = constraints.maxWidth * 0.9;
+                              final cardHeight = constraints.maxHeight * 1.0;
+                              return Center(
+                                child: SizedBox(
+                                  width: cardWidth,
+                                  height: cardHeight,
+                                  child: buildCard(
+                                    cardData[index]["title"]!,
+                                    cardData[index]["description"]!,
+                                    cardData[index]["image"]!,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        threshold: 100,
+                        scale: 0.9,
+                        onSwipe: (index, threshold, direction) {
+                          if (direction == CardSwiperDirection.right) {
+                            swipedRightCount++;
+                            print('Swiped Right: $swipedRightCount');
+                            swipedRightItems.add(cardData[index]);
+                          } else if (direction == CardSwiperDirection.left) {
+                            swipedLeftCount++;
+                            print('Swiped Left: $swipedLeftCount');
+                          }
+                          return true;
+                        },
+                        onEnd: () async {
+                          // Fetch recommendation asynchronously
+                          final recommendation = await getRecommendation();
+                          setState(() {
+                            showCards = false;
+                            showFinalCard = true;
+
+                            print(recommendation);
+
+                            if(selectedCategory == "Movies"){
+                            // Use recommendation data for finalCard
+                            finalCard = {
+                              "title": recommendation['"title"'] ?? "No Recommendations",
+                              "description": recommendation['"description"'] ?? "Swipe right to get recommendations!",
+                              "image": recommendation['"image_url"'] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
+                            };
+                            } else{
+                              finalCard = {
+                              "title": recommendation['song'] ?? "No Recommendations",
+                              "description": recommendation['genre'] ?? "Swipe right to get recommendations!",
+                              "image": recommendation['image_url'] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
+                            };
+                            }
+                            
+                          });
+
+                          await Future.delayed(const Duration(milliseconds: 300));
+                          _animationController.forward();
+                        },
+                      )
+                    : showFinalCard
+                        ? SlideTransition(
+                            position: _slideAnimation,
+                            child: Center(
+                              child: SizedBox(
+                                width: 300,
+                                height: 450,
+                                child: buildCard(
+                                  finalCard["title"]!,
+                                  finalCard["description"]!,
+                                  finalCard["image"]!,
+                                ),
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            "No more cards to show!",
+                            style: TextStyle(fontSize: 24, color: Colors.grey),
+                          ),
+              ),
+            ),
+          ],
+        ),
+        if (showFinalCard)
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: restart,
+              backgroundColor: const Color.fromARGB(255, 28, 15, 21),
+              foregroundColor: const Color.fromARGB(186, 255, 255, 255),
+              shape: RoundedRectangleBorder(
+                side: BorderSide(
+                  color: const Color.fromARGB(186, 255, 255, 255),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.replay),
+            ),
+          ),
+      ],
+    ),
+  );
+}
 }
