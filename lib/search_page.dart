@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'movie_services.dart'; // Import the service functions
+import 'flask/movie_services.dart'; // Import the service functions
 import 'dart:async';
 
 class SearchPage extends StatefulWidget {
@@ -57,6 +57,7 @@ class _SearchPageState extends State<SearchPage> {
         } catch (e) {
           setState(() {
             _errorMessage = e.toString();
+            print(_errorMessage);
             _moviesData = [];
           });
         }

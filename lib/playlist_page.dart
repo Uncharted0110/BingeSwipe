@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'movie_services.dart';
+import 'flask/movie_services.dart';
 
 class PlaylistCard extends StatelessWidget {
   final String playlistName;

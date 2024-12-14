@@ -30,7 +30,7 @@ Future<List<Map<String, String>>> fetchMoviesByGenre(String genre) async {
 }
 
 // Fetch movies by title
-Future<List<Map<String, String>>> fetchMoviesByName(String title) async {
+Future<List<Map<String, String>>> fetchMoviesByTitle(String title) async {
   var url = "http://127.0.0.1:5000/searchMovieByTitle?title=$title";
   final response = await http.get(Uri.parse(url));
 
@@ -47,8 +47,6 @@ Future<List<Map<String, String>>> fetchMoviesByName(String title) async {
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
-              'rating': movie["rating"],
-              'language': movie["language"]
             })
         .toList();
   } else {
