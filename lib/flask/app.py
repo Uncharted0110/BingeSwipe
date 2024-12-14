@@ -83,7 +83,6 @@ def getAll_movies():
             "director" : 1,
             "movie_id" : 1,
             '_id': 0,
-            "rating" : 1, 
             "language": 1,
 
         }).limit(6))
@@ -113,7 +112,6 @@ def search_movie_by_title():
             "director" : 1,
             "movie_id" : 1,
             '_id': 0,
-            "rating" : 1, 
             "language": 1,
         }))
 
@@ -156,7 +154,6 @@ def search_movie_by_genre():
             "director" : 1,
             "movie_id" : 1,
             '_id': 0,
-            "rating" : 1, 
             "language": 1,
         }))
 
@@ -198,7 +195,6 @@ def search_movie_by_actor():
             "director" : 1,
             "movie_id" : 1,
             '_id': 0,
-            "rating" : 1, 
             "language": 1,
         }))
 

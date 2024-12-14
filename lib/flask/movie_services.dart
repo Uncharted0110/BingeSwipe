@@ -20,7 +20,6 @@ Future<List<Map<String, String>>> fetchMoviesByGenre(String genre) async {
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
-              'rating': movie["rating"],
               'language': movie["language"]
             })
         .toList();
@@ -47,6 +46,7 @@ Future<List<Map<String, String>>> fetchMoviesByTitle(String title) async {
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
+              'language': movie["language"]
             })
         .toList();
   } else {
@@ -71,7 +71,6 @@ Future<List<Map<String, String>>> fetchMoviesByActor(String actor) async {
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
-              'rating': movie["rating"],
               'language': movie["language"]
             })
         .toList();
@@ -97,7 +96,6 @@ Future<List<Map<String, String>>> fetchAllMovies() async {
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
-              'rating': movie["rating"],
               'language': movie["language"]
             })
         .toList();
@@ -193,12 +191,6 @@ void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                             maxLines: 2,
                           ),
                           const SizedBox(height: 10),
-                          // Display Rating
-                          Text(
-                            'Rating: ${movie['rating']}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 5),
                           // Display Language
                           Text(
                             '${movie['language'] ?? 'N/A'}',
