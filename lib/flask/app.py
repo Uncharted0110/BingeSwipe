@@ -30,17 +30,21 @@ except errors.ConnectionFailure as e:
 
 @app.route('/moviesSwipe', methods=['GET'])
 def get_movies():
-    random_numbers = random.sample(range(1, 21), 3)
+    random_numbers = random.sample(range(1, 23), 3)
 
     try:
+        total_movies = Movie_collection.count_documents({})
+        
+        random_numbers = random.sample(range(1, total_movies + 1), 3)
+
         movies = []
 
         for movie_id in random_numbers:
             movies += list(Movie_collection.find({"movie_id": movie_id}, {
-                '"title"': 1, 
-                '"description"': 1, 
-                '"image_url"': 1,
-                '"genre"' : 1,
+                "title": 1, 
+                "description": 1, 
+                "image_url": 1,
+                "genre" : 1,
                 '_id': 0
             }))
         
@@ -73,12 +77,12 @@ def get_songs():
 def getAll_movies():
     try:
         movies = list(Movie_collection.find({}, {
-            '"title"': 1, 
-            '"description"': 1, 
-            '"image_url"' : 1,
-            '"line"' : 1,
-            '"r_year"' : 1,
-            '"genre"' : 1,
+            "title": 1, 
+            "description": 1, 
+            "image_url" : 1,
+            "line" : 1,
+            "r_year" : 1,
+            "genre" : 1,
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
@@ -101,13 +105,13 @@ def search_movie_by_title():
 
     try:
         # Search for movies with a matching title (case-insensitive)
-        movies = list(Movie_collection.find({'"title"' : {"$regex": title, "$options": "i"}}, {
-            '"title"': 1, 
-            '"description"': 1, 
-            '"image_url"' : 1,
-            '"line"' : 1,
-            '"r_year"' : 1,
-            '"genre"' : 1,
+        movies = list(Movie_collection.find({"title" : {"$regex": title, "$options": "i"}}, {
+            "title": 1, 
+            "description": 1, 
+            "image_url" : 1,
+            "line" : 1,
+            "r_year" : 1,
+            "genre" : 1,
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
@@ -134,7 +138,7 @@ def search_movie_by_genre():
 
     try:
         # Retrieve movie IDs that match the genre as a flat list
-        movie_ids = [movie['movie_id'] for movie in Genre_collection.find({'genre': {"$regex": genre, "$options": "i"}},  {"movie_id": 1, '_id': 0})]
+        movie_ids = [movie['movie_ids'] for movie in Genre_collection.find({'genre': {"$regex": genre, "$options": "i"}},  {"movie_ids": 1, '_id': 0})]
 
 
         movie_ids = [item for sublist in movie_ids for item in sublist]
@@ -144,12 +148,12 @@ def search_movie_by_genre():
 
         # Fetch detailed movie data for the retrieved IDs
         movies = list(Movie_collection.find({"movie_id": {"$in": movie_ids}}, {
-            '"title"': 1, 
-            '"description"': 1, 
-            '"image_url"' : 1,
-            '"line"' : 1,
-            '"r_year"' : 1,
-            '"genre"' : 1,
+            "title": 1, 
+            "description": 1, 
+            "image_url" : 1,
+            "line" : 1,
+            "r_year" : 1,
+            "genre" : 1,
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
@@ -185,12 +189,12 @@ def search_movie_by_actor():
 
         # Fetch detailed movie data for the retrieved IDs
         movies = list(Movie_collection.find({"movie_id": {"$in": movie_ids}}, {
-            '"title"': 1, 
-            '"description"': 1, 
-            '"image_url"' : 1,
-            '"line"' : 1,
-            '"r_year"' : 1,
-            '"genre"' : 1,
+            "title": 1, 
+            "description": 1, 
+            "image_url" : 1,
+            "line" : 1,
+            "r_year" : 1,
+            "genre" : 1,
             "cast" : 1,
             "director" : 1,
             "movie_id" : 1,
@@ -253,9 +257,9 @@ def get_playlist(name):
 
     # Fetch detailed movie data for the retrieved IDs
     movies = list(Movie_collection.find({"movie_id": {"$in": movie_ids}}, {
-        '"title"': 1, 
-        '"description"': 1, 
-        '"image_url"' : 1,
+        "title": 1, 
+        "description": 1, 
+        "image_url" : 1,
         '_id': 0
     }))
 

@@ -11,12 +11,12 @@ Future<List<Map<String, String>>> fetchMoviesByGenre(String genre) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((movie) => {
-              'title': movie['"title"'] ?? 'No Title Available',
-              'description': movie['"description"'] ?? 'No Description Available',
-              'image_url': movie['"image_url"'] ?? '',
-              'line': movie['"line"'] ?? 'No line',
-              'r_year': movie['"r_year"'] ?? 'Not released',
-              'genre': (movie['"genre"'] ?? []).join(', ') ?? 'No genre',
+              'title': movie["title"] ?? 'No Title Available',
+              'description': movie["description"] ?? 'No Description Available',
+              'image_url': movie["image_url"] ?? '',
+              'line': movie["line"] ?? 'No line',
+              'r_year': movie["r_year"] ?? 'Not released',
+              'genre': (movie["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
@@ -37,12 +37,12 @@ Future<List<Map<String, String>>> fetchMoviesByTitle(String title) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((movie) => {
-              'title': movie['"title"'] ?? 'No Title Available',
-              'description': movie['"description"'] ?? 'No Description Available',
-              'image_url': movie['"image_url"'] ?? '',
-              'line': movie['"line"'] ?? 'No line',
-              'r_year': movie['"r_year"'] ?? 'Not released',
-              'genre': (movie['"genre"'] ?? []).join(', ') ?? 'No genre',
+              'title': movie["title"] ?? 'No Title Available',
+              'description': movie["description"] ?? 'No Description Available',
+              'image_url': movie["image_url"] ?? '',
+              'line': movie["line"] ?? 'No line',
+              'r_year': movie["r_year"] ?? 'Not released',
+              'genre': (movie["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
@@ -62,12 +62,12 @@ Future<List<Map<String, String>>> fetchMoviesByActor(String actor) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((movie) => {
-              'title': movie['"title"'] ?? 'No Title Available',
-              'description': movie['"description"'] ?? 'No Description Available',
-              'image_url': movie['"image_url"'] ?? '',
-              'line': movie['"line"'] ?? 'No line',
-              'r_year': movie['"r_year"'] ?? 'Not released',
-              'genre': (movie['"genre"'] ?? []).join(', ') ?? 'No genre',
+              'title': movie["title"] ?? 'No Title Available',
+              'description': movie["description"] ?? 'No Description Available',
+              'image_url': movie["image_url"] ?? '',
+              'line': movie["line"] ?? 'No line',
+              'r_year': movie["r_year"] ?? 'Not released',
+              'genre': (movie["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
@@ -87,12 +87,12 @@ Future<List<Map<String, String>>> fetchAllMovies() async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((movie) => {
-              'title': movie['"title"'] ?? 'No Title Available',
-              'description': movie['"description"'] ?? 'No Description Available',
-              'image_url': movie['"image_url"'] ?? '',
-              'line': movie['"line"'] ?? 'No line',
-              'r_year': movie['"r_year"'] ?? 'Not released',
-              'genre': (movie['"genre"'] ?? []).join(', ') ?? 'No genre',
+              'title': movie["title"] ?? 'No Title Available',
+              'description': movie["description"] ?? 'No Description Available',
+              'image_url': movie["image_url"] ?? '',
+              'line': movie["line"] ?? 'No line',
+              'r_year': movie["r_year"] ?? 'Not released',
+              'genre': (movie["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (movie["cast"] ?? []).join(', ') ?? 'No cast',
               'director': movie["director"] ?? 'No director',
               'movie_id' : movie["movie_id"].toString(),
@@ -188,7 +188,7 @@ void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                                 fontSize: 30, fontWeight: FontWeight.bold, fontFamily: 'Oswald'),
                             softWrap: true,
                             overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
+                            maxLines: 3,
                           ),
                           const SizedBox(height: 10),
                           // Display Language
@@ -353,9 +353,9 @@ Future<List<Map<String, dynamic>>> fetchMoviesForPlaylist(String playlistName) a
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((movie) => {
-              'title': movie['"title"'] ?? 'No Title Available',
-              'description': movie['"description"'] ?? 'No Description Available',
-              'image_url': movie['"image_url"'] ?? '',
+              'title': movie["title"] ?? 'No Title Available',
+              'description': movie["description"] ?? 'No Description Available',
+              'image_url': movie["image_url"] ?? '',
             })
         .toList();
   } else {

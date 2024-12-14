@@ -115,10 +115,10 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
         setState(() {
           movieCardData = movieData
               .map((movie) => {
-                    "title": movie['"title"'] ?? "No Title",
-                    "description": movie['"description"'] ?? "No Description",
-                    "image": movie['"image_url"'] ?? "https://via.placeholder.com/300x200.png?text=Movie+Image",
-                    "genre": (movie['"genre"'] as List<dynamic>?)?.join(", ") ?? "No Genre",
+                    "title": movie["title"] ?? "No Title",
+                    "description": movie["description"] ?? "No Description",
+                    "image": movie["image_url"] ?? "https://via.placeholder.com/300x200.png?text=Movie+Image",
+                    "genre": (movie["genre"] as List<dynamic>?)?.join(", ") ?? "No Genre",
                   })
               .toList();
           isLoading = false;
@@ -375,9 +375,9 @@ Widget build(BuildContext context) {
                             if(selectedCategory == "Movies"){
                             // Use recommendation data for finalCard
                             finalCard = {
-                              "title": recommendation['"title"'] ?? "No Recommendations",
-                              "description": recommendation['"description"'] ?? "Swipe right to get recommendations!",
-                              "image": recommendation['"image_url"'] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
+                              "title": recommendation["title"] ?? "No Recommendations",
+                              "description": recommendation["description"] ?? "Swipe right to get recommendations!",
+                              "image": recommendation["image_url"] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
                             };
                             } else{
                               finalCard = {
