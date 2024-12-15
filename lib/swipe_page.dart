@@ -5,6 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+
+List<String> convertToGenreList(dynamic genre) {
+  if (genre == null) return [];
+  
+  if (genre is List) {
+    return genre.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+  }
+  
+  if (genre is String) {
+    return genre.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
+  
+  return [];
+}
+
 class SwipePage extends StatefulWidget {
   const SwipePage({super.key});
 
@@ -32,15 +47,20 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> swipedRightItems = [];
   Map<String, dynamic> finalCard = {};
 
-   // Analytics logic
+  // Analytics logic
   Future<void> saveGenreAnalytics(List<Map<String, dynamic>> swipedRightMovies) async {
     // Step 1: Extract genres from swiped-right movies
     List<String> genres = [];
     for (var movie in swipedRightMovies) {
-      if (movie["genre"] != null) {
-        final genreList = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
-        genres.addAll(genreList);
+      List<String> movieGenres = [];
+      
+      if (movie["genre"] is List) {
+        movieGenres = (movie["genre"] as List).map((e) => e.toString()).toList();
+      } else if (movie["genre"] is String) {
+        movieGenres = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
       }
+      
+      genres.addAll(movieGenres);
     }
 
     // Step 2: Calculate genre frequency
@@ -69,15 +89,29 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     print("Genre Analytics: $analytics");
   }
 
-   void _onMovieSwipeRight(Map<String, dynamic> movie) {
+  void _onMovieSwipeRight(Map<String, dynamic> movie) {
     // Extract genres and update provider
-    final genres = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
+    List<String> genres = [];
+    
+    if (movie["genre"] is List) {
+      genres = (movie["genre"] as List).map((e) => e.toString()).toList();
+    } else if (movie["genre"] is String) {
+      genres = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
+    }
+    
     Provider.of<GenreAnalyticsProvider>(context, listen: false).addMovieGenres(genres);
   }
 
-  void _onSongSwipeRight(Map<String, dynamic> movie) {
-    // Extract genres and update provider
-    final genres = (movie["genre"] as String).split(", ").map((e) => e.trim()).toList();
+  void _onSongSwipeRight(Map<String, dynamic> song) {
+    // Handle genre extraction more robustly
+    List<String> genres = [];
+    
+    if (song["genre"] is List) {
+      genres = (song["genre"] as List).map((e) => e.toString()).toList();
+    } else if (song["genre"] is String) {
+      genres = (song["genre"] as String).split(", ").map((e) => e.trim()).toList();
+    }
+    
     Provider.of<GenreAnalyticsProvider>(context, listen: false).addSongGenres(genres);
   }
 
@@ -101,61 +135,46 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     ));
   }
 
-  Future<Map<String, dynamic>> getRecommendation() async {
-  try {
-    // Collect genre preferences from swiped items
-    List<String> genrePreferences = [];
-    
-    for (var item in swipedRightItems) {
-      if (selectedCategory == "Movies") {
-        // For movies, genre is already a list (or comma-separated string)
-        final genres = (item["genre"] is List) 
-            ? (item["genre"] as List).map((e) => e.toString()).toList()
-            : (item["genre"] as String).split(", ");
-        genrePreferences.addAll(genres);
-      } else {
-        // For songs, genre is a single string
-        final genre = item["genre"] as String;
-        genrePreferences.add(genre);
+   Future<Map<String, dynamic>> getRecommendation() async {
+    try {
+      List<String> genrePreferences = [];
+      
+      for (var item in swipedRightItems) {
+        genrePreferences.addAll(convertToGenreList(item["genre"]));
       }
-    }
 
-    // Remove duplicates and take unique genres
-    genrePreferences = genrePreferences.toSet().toList();
+      // Remove duplicates and take unique genres
+      genrePreferences = genrePreferences.toSet().toList();
 
-    // Make API call to get recommendation
-    final response = await http.post(
-      Uri.parse('http://127.0.0.1:5000/get_recommendation'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'category': selectedCategory,
-        'genres': genrePreferences
-      }),
-    );
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5000/get_recommendation'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'category': selectedCategory,
+          'genres': genrePreferences
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final recommendation = json.decode(response.body);
-      return recommendation;
-    } else {
-      // Fallback if API call fails
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        return {
+          "title": "No Recommendations",
+          "description": "Try swiping on more cards!",
+          "image": "https://via.placeholder.com/300x200.png?text=No+Recommendation",
+          "genre": "N/A"
+        };
+      }
+    } catch (e) {
+      print('Recommendation error: $e');
       return {
         "title": "No Recommendations",
-        "description": "Try swiping on more cards!",
-        "image": "https://via.placeholder.com/300x200.png?text=No+Recommendation",
+        "description": "Error fetching recommendations",
+        "image": "https://via.placeholder.com/300x200.png?text=Error",
         "genre": "N/A"
       };
     }
-  } catch (e) {
-    print('Recommendation error: $e');
-    return {
-      "title": "No Recommendations",
-      "description": "Error fetching recommendations",
-      "image": "https://via.placeholder.com/300x200.png?text=Error",
-      "genre": "N/A"
-    };
   }
-}
-
 
   Future<void> fetchMovies() async {
     const String baseUrl = 'http://127.0.0.1:5000/moviesSwipe';
@@ -188,36 +207,43 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
     }
   }
 
- Future<void> fetchSongs() async {
-  const String baseUrl = 'http://127.0.0.1:5000/songsSwipe';
-  try {
-    final response = await http.get(Uri.parse(baseUrl));
-    if (response.statusCode == 200) {
-      final List<dynamic> songData = json.decode(response.body);
+  Future<void> fetchSongs() async {
+    const String baseUrl = 'http://127.0.0.1:5000/songsSwipe';
+    try {
+      final response = await http.get(Uri.parse(baseUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> songData = json.decode(response.body);
+        setState(() {
+          songCardData = songData
+              .map((song) => {
+                    "title": song["song"] ?? "No Title",
+                    "description": (song["genre"] is List 
+                        ? (song["genre"] as List).join(", ") 
+                        : song["genre"] ?? "No Genre"),
+                    "genre": song["genre"] is List 
+                        ? (song["genre"] as List).map((e) => e.toString()).toList()
+                        : (song["genre"] is String 
+                            ? [song["genre"]] 
+                            : []), // Ensure genre is always a list of strings
+                    "image": song["image_url"] ??
+                        "https://via.placeholder.com/300x200.png?text=Song+Image",
+                  })
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = 'Failed to load songs: ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        songCardData = songData
-            .map((song) => {
-                  "title": song["song"] ?? "No Title", // Use "song" key for title
-                  "description": song["genre"] ?? "No Genre",
-                  "genre": song["genre"],
-                  "image": song["image_url"] ?? "https://via.placeholder.com/300x200.png?text=Song+Image", // Correct image key
-                })
-            .toList();
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        error = 'Failed to load songs: ${response.statusCode}';
+        error = 'Failed to load songs: $e';
         isLoading = false;
       });
     }
-  } catch (e) {
-    setState(() {
-      error = 'Failed to load songs: $e';
-      isLoading = false;
-    });
   }
-}
 
   @override
   void dispose() {
@@ -226,14 +252,14 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   }
 
   void restart() {
-  setState(() {
-    showCards = true;
-    showFinalCard = false;
-  });
-  
-  fetchMovies();
-  fetchSongs();
-}
+    setState(() {
+      showCards = true;
+      showFinalCard = false;
+    });
+    
+    fetchMovies();
+    fetchSongs();
+  }
 
   Widget buildCard(String title, String description, String imageUrl) {
   
@@ -424,6 +450,7 @@ Widget build(BuildContext context) {
                         onEnd: () async {
                           // Fetch recommendation asynchronously
                           final recommendation = await getRecommendation();
+                          print(recommendation);
                           setState(() {
                             showCards = false;
                             showFinalCard = true;
@@ -437,10 +464,13 @@ Widget build(BuildContext context) {
                             };
                             } else{
                               finalCard = {
-                              "title": recommendation['song'] ?? "No Recommendations",
-                              "description": recommendation['genre'] ?? "Swipe right to get recommendations!",
-                              "image": recommendation['image_url'] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
-                            };
+                                "title": recommendation['song'] ?? "No Recommendations",
+                                "description": recommendation['genre'] is List
+                                    ? (recommendation['genre'] as List).join(", ") // Join list into a string
+                                    : recommendation['genre']?.toString() ?? "Swipe right to get recommendations!", // Convert to string if not null
+                                "image": recommendation['image_url'] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
+                              };
+
                             }
                             
                           });

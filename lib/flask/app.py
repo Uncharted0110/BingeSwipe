@@ -55,7 +55,7 @@ def get_movies():
     
 @app.route('/songsSwipe', methods=['GET'])
 def get_songs():
-    random_numbers = random.sample(range(1, 5), 3)
+    random_numbers = random.sample(range(1, 6), 3)
 
     try:
         songs = []
@@ -339,12 +339,12 @@ def get_recommendation():
     # Select the appropriate collection based on category
     collection = db['Movies'] if selected_category == 'Movies' else db['Songs']
 
-    # Different approach for Movies (array of genres) and Songs (string genre)
+    # Different approach for Movies (array of genres) and Songs (array of genres)
     if selected_category == 'Movies':
         # For movies, check if any of the movie's genres match the preferences
         if genre_preferences:
             recommendations = list(collection.aggregate([
-                {'$match': {'"genre"': {'$elemMatch': {'$in': genre_preferences}}}},
+                {'$match': {'genre': {'$elemMatch': {'$in': genre_preferences}}}},
                 {'$sample': {'size': 1}}
             ]))
 
@@ -359,10 +359,10 @@ def get_recommendation():
                 {'$sample': {'size': 1}}
             ]))
     else:
-        # For songs, do a direct string match
+        # For songs, check genre match in array
         if genre_preferences:
             recommendations = list(collection.aggregate([
-                {'$match': {'genre': {'$in': genre_preferences}}},
+                {'$match': {'genre': {'$elemMatch': {'$in': genre_preferences}}}},
                 {'$sample': {'size': 1}}
             ]))
 
@@ -383,10 +383,10 @@ def get_recommendation():
         # Remove MongoDB's internal _id field
         recommendation.pop('_id', None)
         return jsonify(recommendation)
-    
+
     # Fallback if no recommendations
     return jsonify({
-        "title": "No Rndations",
+        "title": "No Recommendations",
         "description": "Try swiping on more cards!",
         "image": "https://via.placeholder.com/300x200.png?text=No+Recommendation",
         "genre": "N/A"
