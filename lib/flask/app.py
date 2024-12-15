@@ -25,6 +25,9 @@ try:
     Playlist_collection = db["Playlist"]
     User_collection = db["Users"]
     Song_collection = db["Songs"]
+    SongGenre_collection = db["SongGenres"]
+    Artist_collection = db["Artists"]
+    Album_collection = db["Albums"]
 except errors.ConnectionFailure as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
 
@@ -98,6 +101,26 @@ def getAll_movies():
         logging.error(f"Error retrieving movies: {e}")
         return jsonify({'error': str(e)}), 500
     
+@app.route('/getAllSongs', methods=['GET'])
+def getAll_songs():
+    try:
+        songs = list(Song_collection.find({}, {
+            "song": 1, 
+            "artists": 1, 
+            "image_url" : 1,
+            "r_year" : 1,
+            "genre" : 1,
+            "song_id" : 1,
+            '_id': 0,
+            "album": 1,
+
+        }).limit(6))
+        
+        return jsonify(songs), 200
+    except Exception as e:
+        logging.error(f"Error retrieving movies: {e}")
+        return jsonify({'error': str(e)}), 500
+    
 @app.route('/searchMovieByTitle', methods=['GET'])
 def search_movie_by_title():
     title = request.args.get('title')  # Retrieve the title from query parameters
@@ -128,6 +151,73 @@ def search_movie_by_title():
         return jsonify(movies), 200
     except Exception as e:
         logging.error(f"Error searching movies by title: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/searchSongByTrack', methods=['GET'])
+def search_song_by_name():
+    name = request.args.get('name')  # Retrieve the title from query parameters
+    
+    if not name:
+        return jsonify({'error': 'Name parameter is required'}), 400
+
+    try:
+        # Search for movies with a matching title (case-insensitive)
+        song = list(Song_collection.find({"song" : {"$regex": name, "$options": "i"}}, {
+            "song": 1, 
+            "artists": 1, 
+            "image_url" : 1,
+            "r_year" : 1,
+            "genre" : 1,
+            "song_id" : 1,
+            '_id': 0,
+            "album": 1,
+        }))
+
+
+        if not song:
+            return jsonify({'message': 'No song found matching the name: ' + name}), 404
+        
+        return jsonify(song), 200
+    except Exception as e:
+        logging.error(f"Error searching movies by name: {e}")
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/searchSongByAlbum', methods=['GET'])
+def search_song_by_album():
+    album = request.args.get('album')  # Retrieve the album from query parameters
+
+    if not album:
+        return jsonify({'error': 'Album parameter is required'}), 400
+
+    try:
+        # Retrieve song IDs that match the album as a flat list
+        song_ids = [song['song_ids'] for song in Album_collection.find({'name': {"$regex": album, "$options": "i"}},  {"song_ids": 1, '_id': 0})]
+
+        song_ids = [item for sublist in song_ids for item in sublist]
+
+        if not song_ids:
+            return jsonify({'message': f'No song found for the album: {album}'}), 404
+
+        # Fetch detailed song data for the retrieved IDs
+        songs = list(Song_collection.find({"song_id": {"$in": song_ids}}, {
+            "song": 1, 
+            "artists": 1, 
+            "image_url" : 1,
+            "r_year" : 1,
+            "genre" : 1,
+            "song_id" : 1,
+            '_id': 0,
+            "album": 1,
+        }))
+
+        if not songs:
+            return jsonify({'message': 'No songs retrieved for the album'}), 404
+
+        return jsonify(songs), 200
+    except Exception as e:
+        logging.error(f"Error searching song by album: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -170,6 +260,43 @@ def search_movie_by_genre():
     except Exception as e:
         logging.error(f"Error searching movies by genre: {e}")
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/searchSongByGenre', methods=['GET'])
+def search_song_by_genre():
+    genre = request.args.get('genre')  # Retrieve the genre from query parameters
+    
+    if not genre:
+        return jsonify({'error': 'Genre parameter is required'}), 400
+
+    try:
+        # Retrieve movie IDs that match the genre as a flat list
+        song_ids = [song['song_ids'] for song in SongGenre_collection.find({'genre': {"$regex": genre, "$options": "i"}},  {"song_ids": 1, '_id': 0})]
+
+
+        song_ids = [item for sublist in song_ids for item in sublist]
+
+        if not song_ids:
+            return jsonify({'message': f'No song found matching the genre: {genre}'}), 404
+
+        # Fetch detailed movie data for the retrieved IDs
+        song = list(Song_collection.find({"song_id": {"$in": song_ids}}, {
+            "song": 1, 
+            "artists": 1, 
+            "image_url" : 1,
+            "r_year" : 1,
+            "genre" : 1,
+            "song_id" : 1,
+            '_id': 0,
+            "album": 1,
+        }))
+
+        if not song:
+            return jsonify({'message': 'No song retrieved for the genre'}), 404
+        
+        return jsonify(song), 200
+    except Exception as e:
+        logging.error(f"Error searching song by genre: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/searchMovieByActor', methods=['GET'])
@@ -209,7 +336,44 @@ def search_movie_by_actor():
         
         return jsonify(movies), 200
     except Exception as e:
-        logging.error(f"Error searching movies by genre: {e}")
+        logging.error(f"Error searching movies by actor: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/searchSongByArtist', methods=['GET'])
+def search_song_by_artist():
+    artist = request.args.get('artist')  # Retrieve the artist from query parameters
+
+    if not artist:
+        return jsonify({'error': 'Artist parameter is required'}), 400
+
+    try:
+        # Retrieve song IDs that match the artist as a flat list
+        song_ids = [song['song_ids'] for song in Artist_collection.find({'name': {"$regex": artist, "$options": "i"}},  {"song_ids": 1, '_id': 0})]
+
+        song_ids = [item for sublist in song_ids for item in sublist]
+
+        if not song_ids:
+            return jsonify({'message': f'No song found for the artist: {artist}'}), 404
+
+        # Fetch detailed song data for the retrieved IDs
+        songs = list(Song_collection.find({"song_id": {"$in": song_ids}}, {
+            "song": 1, 
+            "artists": 1, 
+            "image_url" : 1,
+            "r_year" : 1,
+            "genre" : 1,
+            "song_id" : 1,
+            '_id': 0,
+            "album": 1,
+        }))
+
+        if not songs:
+            return jsonify({'message': 'No songs retrieved for the artist'}), 404
+
+        return jsonify(songs), 200
+    except Exception as e:
+        logging.error(f"Error searching song by artist: {e}")
         return jsonify({'error': str(e)}), 500
 
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'flask/movie_services.dart'; // Import the service functions
+import 'flask/song_services.dart'; // Import song service functions
 import 'dart:async';
 
 class SearchPage extends StatefulWidget {
@@ -9,17 +10,27 @@ class SearchPage extends StatefulWidget {
   _SearchPageState createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
-  final TextEditingController _controller = TextEditingController();
+class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateMixin {
+  final TextEditingController _controllerTab1 = TextEditingController();
+  final TextEditingController _controllerTab2 = TextEditingController();
+
+  late TabController _tabController;
+
   List<Map<String, String>> _moviesData = [];
-  String _errorMessage = '';
-  Timer? _debounce;
-  String _searchType = 'Title'; // Default to Title search
+  List<Map<String, String>> _songsData = [];
+  String _errorMessageTab1 = '';
+  String _errorMessageTab2 = '';
+  Timer? _debounceTab1;
+  Timer? _debounceTab2;
+  String _searchTypeTab1 = 'Title'; // Default to Title search for Tab 1
+  String _searchTypeTab2 = 'Track'; // Default to Track search for Tab 2
 
   @override
   void initState() {
     super.initState();
-    _fetchAllMovies(); // Fetch all movies when the page loads
+    _tabController = TabController(length: 2, vsync: this);
+    _fetchAllMovies();
+    _fetchAllSongs();
   }
 
   Future<void> _fetchAllMovies() async {
@@ -27,42 +38,85 @@ class _SearchPageState extends State<SearchPage> {
       List<Map<String, String>> movies = await fetchAllMovies();
       setState(() {
         _moviesData = movies;
-        _errorMessage = '';
+        _errorMessageTab1 = '';
       });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessageTab1 = e.toString();
         _moviesData = [];
       });
     }
   }
 
-  void _onSearchTextChanged(String text) {
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+  Future<void> _fetchAllSongs() async {
+    try {
+      List<Map<String, String>> songs = await fetchAllSongs();
+      setState(() {
+        _songsData = songs;
+        _errorMessageTab2 = '';
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessageTab2 = e.toString();
+        _songsData = [];
+      });
+    }
+  }
+
+  void _onSearchTextChangedTab1(String text) {
+    if (_debounceTab1?.isActive ?? false) _debounceTab1?.cancel();
+    _debounceTab1 = Timer(const Duration(milliseconds: 500), () async {
       if (text.isNotEmpty) {
         try {
           List<Map<String, String>> movies;
-          if (_searchType == 'Title') {
+          if (_searchTypeTab1 == 'Title') {
             movies = await fetchMoviesByTitle(text);
-          } else if (_searchType == 'Genre'){
+          } else if (_searchTypeTab1 == 'Genre') {
             movies = await fetchMoviesByGenre(text);
           } else {
             movies = await fetchMoviesByActor(text);
           }
           setState(() {
             _moviesData = movies;
-            _errorMessage = '';
+            _errorMessageTab1 = '';
           });
         } catch (e) {
           setState(() {
-            _errorMessage = e.toString();
-            print(_errorMessage);
+            _errorMessageTab1 = e.toString();
             _moviesData = [];
           });
         }
       } else {
-        _fetchAllMovies(); // Show all movies when search is cleared
+        _fetchAllMovies();
+      }
+    });
+  }
+
+  void _onSearchTextChangedTab2(String text) {
+    if (_debounceTab2?.isActive ?? false) _debounceTab2?.cancel();
+    _debounceTab2 = Timer(const Duration(milliseconds: 500), () async {
+      if (text.isNotEmpty) {
+        try {
+          List<Map<String, String>> songs;
+          if (_searchTypeTab2 == 'Track') {
+            songs = await fetchSongsByTrack(text);
+          } else if (_searchTypeTab2 == 'Genre') {
+            songs = await fetchSongsByGenre(text);
+          } else {
+            songs = await fetchSongsByArtist(text);
+          }
+          setState(() {
+            _songsData = songs;
+            _errorMessageTab2 = '';
+          });
+        } catch (e) {
+          setState(() {
+            _errorMessageTab2 = e.toString();
+            _songsData = [];
+          });
+        }
+      } else {
+        _fetchAllSongs();
       }
     });
   }
@@ -87,11 +141,11 @@ class _SearchPageState extends State<SearchPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Add a text search field above the existing search box
+                    // Heading
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
-                        'Search Movies',
+                        'Search',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 40,
@@ -100,122 +154,48 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                       ),
                     ),
-                    // Search Box
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 28, 15, 21),
-                        borderRadius: BorderRadius.circular(25.0),
-                        border: Border.all(color: Colors.grey),
+                    // Tabs
+                    TabBar(
+                      controller: _tabController,
+                      tabs: const [
+                        Tab(text: 'Movies'),
+                        Tab(text: 'Songs'),
+                      ],
+                      indicatorColor: Colors.white,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: Row(
+                    ),
+                    const SizedBox(height: 10),
+                    // Tab content
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
                         children: [
-                          const Icon(Icons.search, color: Colors.white),
-                          Expanded(
-                            child: TextField(
-                              controller: _controller,
-                              onChanged: _onSearchTextChanged,
-                              style: const TextStyle(color: Colors.white),
-                              cursorColor: Colors.white, // Change cursor color to white
-                              decoration: InputDecoration(
-                                hintText: 'Search by $_searchType',
-                                hintStyle: const TextStyle(color: Colors.grey),
-                                border: InputBorder.none,
-                              ),
-                            ),
+                          _buildSearchTab(
+                            controller: _controllerTab1,
+                            onSearchTextChanged: _onSearchTextChangedTab1,
+                            searchType: _searchTypeTab1,
+                            onSearchTypeChanged: (value) => setState(() => _searchTypeTab1 = value!),
+                            data: _moviesData,
+                            errorMessage: _errorMessageTab1,
+                            isMoviesTab: true, // Movies tab
                           ),
-                          DropdownButton<String>(
-                            value: _searchType,
-                            dropdownColor: const Color.fromARGB(255, 28, 15, 21),
-                            items: <String>['Title', 'Genre', 'Actor'].map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(
-                                  value,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16, // Adjusted font size
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _searchType = newValue!;
-                              });
-                            },
-                            underline: const SizedBox(), // Remove dropdown underline
+                          _buildSearchTab(
+                            controller: _controllerTab2,
+                            onSearchTextChanged: _onSearchTextChangedTab2,
+                            searchType: _searchTypeTab2,
+                            onSearchTypeChanged: (value) => setState(() => _searchTypeTab2 = value!),
+                            data: _songsData,
+                            errorMessage: _errorMessageTab2,
+                            isMoviesTab: false, // Songs tab
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Display Results
-                    if (_moviesData.isNotEmpty)
-                      Expanded(
-                        child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.8,
-                          ),
-                          itemCount: _moviesData.length,
-                          itemBuilder: (context, index) {
-                            final movie = _moviesData[index];
-                            return GestureDetector(
-                              onTap: () => showDescriptionPopup(context, movie),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  border: Border.all(color: Colors.grey, width: 2),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Stack(
-                                    children: [
-                                      movie['image_url'] != null && movie['image_url']!.isNotEmpty
-                                          ? Image.network(
-                                              movie['image_url']!,
-                                              fit: BoxFit.cover,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                            )
-                                          : Container(
-                                              color: Colors.grey,
-                                              child: const Center(
-                                                child: Text(
-                                                  'No Image Available',
-                                                  style: TextStyle(color: Colors.white),
-                                                ),
-                                              ),
-                                            ),
-                                      Positioned(
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        child: Container(
-                                          color: Colors.black.withOpacity(0.6),
-                                          child: Text(
-                                            movie['title'] ?? 'No Title',
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(color: Colors.white, fontSize: 16),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    if (_errorMessage.isNotEmpty)
-                      Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.red, fontSize: 16),
-                      ),
                   ],
                 ),
               ),
@@ -223,6 +203,141 @@ class _SearchPageState extends State<SearchPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchTab({
+    required TextEditingController controller,
+    required Function(String) onSearchTextChanged,
+    required String searchType,
+    required Function(String?) onSearchTypeChanged,
+    required List<Map<String, String>> data,
+    required String errorMessage,
+    required bool isMoviesTab,
+  }) {
+    return Column(
+      children: [
+        // Search Box
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 28, 15, 21),
+            borderRadius: BorderRadius.circular(25.0),
+            border: Border.all(color: Colors.grey),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Colors.white),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  onChanged: onSearchTextChanged,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: Colors.white,
+                  decoration: InputDecoration(
+                    hintText: 'Search by $searchType',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              DropdownButton<String>(
+                value: searchType,
+                dropdownColor: const Color.fromARGB(255, 28, 15, 21),
+                items: isMoviesTab
+                    ? <String>['Title', 'Genre', 'Actor']
+                        .map((String value) => DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                            ))
+                        .toList()
+                    : <String>['Track', 'Genre', 'Artist/Album']
+                        .map((String value) => DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                            ))
+                        .toList(),
+                onChanged: onSearchTypeChanged,
+                underline: const SizedBox(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Results
+        if (data.isNotEmpty)
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                final item = data[index];
+                return GestureDetector(
+                  onTap: () => showDescriptionPopup(context, item),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10.0),
+                      border: Border.all(color: Colors.grey, width: 2),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Stack(
+                        children: [
+                          item['image_url'] != null && item['image_url']!.isNotEmpty
+                              ? Image.network(
+                                  item['image_url']!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                              : Container(
+                                  color: Colors.grey,
+                                  child: const Center(
+                                    child: Text(
+                                      'No Image Available',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              color: Colors.black.withOpacity(0.6),
+                              padding: const EdgeInsets.all(4.0),
+                              child: Text(
+                                item['title'] ?? 'No Title',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        if (errorMessage.isNotEmpty)
+          Text(
+            errorMessage,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+          ),
+      ],
     );
   }
 }

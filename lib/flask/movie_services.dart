@@ -54,6 +54,9 @@ Future<List<Map<String, String>>> fetchMoviesByTitle(String title) async {
   }
 }
 
+// Fetch songs by name
+
+
 Future<List<Map<String, String>>> fetchMoviesByActor(String actor) async {
   var url = "http://127.0.0.1:5000/searchMovieByActor?actor=$actor"; // Corrected endpoint
   final response = await http.get(Uri.parse(url));
@@ -103,6 +106,9 @@ Future<List<Map<String, String>>> fetchAllMovies() async {
     throw Exception('Failed to fetch all movies: ${response.statusCode}');
   }
 }
+
+
+
 
 
 // Show movie description popup
@@ -198,12 +204,12 @@ void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                           ),
                           const SizedBox(height: 15),
                           Text(
-                            'Director: ${movie['director']}',
+                            '${movie['director']}',
                             style: const TextStyle(fontSize: 16),
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Cast: ${movie['cast']}',
+                            '${movie['cast']}',
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],
@@ -222,7 +228,7 @@ void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                 const SizedBox(height: 15),
                 Center(
                   child: Text(
-                    '"${movie['line']}"',
+                    '${movie['line']}',
                     style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
                     textAlign: TextAlign.center,
                   ),
