@@ -155,23 +155,33 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
   }
 
   Future<void> onEndSwipe() async {
-    final recommendation = await getRecommendation();
-    setState(() {
-      showCards = false;
-      showFinalCard = true;
+  final recommendation = await getRecommendation();
+  setState(() {
+    showCards = false;
+    showFinalCard = true;
+    
+    if (selectedCategory == "Movies") {
       finalCard = {
-        "title": recommendation["title"] ?? recommendation["song"] ?? "No Recommendations",
-        "description": recommendation["genre"] is List
-            ? (recommendation["genre"] as List).join(", ")
-            : recommendation["description"] ?? "Swipe right to get recommendations!",
+        "title": recommendation["title"] ?? "No Recommendations",
+        "description": recommendation["description"] ?? "Swipt recommendations!",
         "image": recommendation["image_url"] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
       };
-    });
-    if (selectedCategory == "Movies") {
-      await saveGenreAnalytics(swipedRightItems);
+    } else {
+      finalCard = {
+        "title": recommendation["song"] ?? "No Recommendations",
+        "description": recommendation["genre"] is List
+            ? (recommendation["genre"] as List).join(", ")
+            : recommendation["genre"] ?? "No Genre",  // Set description to genre
+        "genre": recommendation["genre"] is List
+            ? (recommendation["genre"] as List).join(", ")
+            : recommendation["genre"] ?? "No Genre",
+        "image": recommendation["image_url"] ?? "https://via.placeholder.com/300x200.png?text=No+Image",
+      };
     }
-    _animationController.forward();
-  }
+  });
+  _animationController.forward();
+}
+
 
   Future<void> saveGenreAnalytics(List<Map<String, dynamic>> items) async {
     final genres = items

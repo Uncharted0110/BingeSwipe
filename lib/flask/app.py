@@ -55,7 +55,9 @@ def get_movies():
     
 @app.route('/songsSwipe', methods=['GET'])
 def get_songs():
-    random_numbers = random.sample(range(1, 6), 3)
+    total_songs = Song_collection.count_documents({})
+
+    random_numbers = random.sample(range(1, total_songs + 1), 3)
 
     try:
         songs = []
