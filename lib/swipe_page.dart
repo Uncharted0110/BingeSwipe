@@ -285,22 +285,28 @@ class _SwipePageState extends State<SwipePage> with SingleTickerProviderStateMix
 
 
   Widget buildCategorySelector() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedCategory = selectedCategory == "Movies" ? "Songs" : "Movies";
-            fetchData();
-          });
-        },
-        child: Text(
-          selectedCategory,
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCategory = selectedCategory == "Movies" ? "Songs" : "Movies";
+          fetchData();
+        });
+      },
+      child: Text(
+        selectedCategory,
+        style: const TextStyle(
+          fontSize: 40,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontFamily: 'Oswald', // Apply Oswald font family
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
