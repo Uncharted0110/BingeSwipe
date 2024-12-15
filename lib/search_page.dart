@@ -282,54 +282,57 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
               ),
               itemCount: data.length,
               itemBuilder: (context, index) {
-                final item = data[index];
-                return GestureDetector(
-                  onTap: () => showDescriptionPopup(context, item),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      border: Border.all(color: Colors.grey, width: 2),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Stack(
-                        children: [
-                          item['image_url'] != null && item['image_url']!.isNotEmpty
-                              ? Image.network(
-                                  item['image_url']!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                )
-                              : Container(
-                                  color: Colors.grey,
-                                  child: const Center(
-                                    child: Text(
-                                      'No Image Available',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              color: Colors.black.withOpacity(0.6),
-                              padding: const EdgeInsets.all(4.0),
-                              child: Text(
-                                item['title'] ?? 'No Title',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white, fontSize: 16),
-                              ),
-                            ),
-                          ),
-                        ],
+  final item = data[index];
+  return GestureDetector(
+    onTap: () => isMoviesTab
+        ? showMovieDescription(context, item) // Show description for movies
+        : showSongDescription(context, item), // Show description for songs
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10.0),
+        border: Border.all(color: Colors.grey, width: 2),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          children: [
+            item['image_url'] != null && item['image_url']!.isNotEmpty
+                ? Image.network(
+                    item['image_url']!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  )
+                : Container(
+                    color: Colors.grey,
+                    child: const Center(
+                      child: Text(
+                        'No Image Available',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
-                );
-              },
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.black.withOpacity(0.6),
+                padding: const EdgeInsets.all(4.0),
+                child: Text(
+                  item['title'] ?? 'No Title',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+},
+
             ),
           ),
         if (errorMessage.isNotEmpty)

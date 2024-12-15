@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:just_audio/just_audio.dart';
 
 Future<List<Map<String, String>>> fetchAllSongs() async {
   var url = "http://127.0.0.1:5000/getAllSongs"; // Endpoint for all movies
@@ -11,13 +12,13 @@ Future<List<Map<String, String>>> fetchAllSongs() async {
     return data
         .map<Map<String, String>>((song) => {
               'title': song["song"] ?? 'No Title Available',
-              'description': "" ?? 'No Description Available',
+              'description': song["song_url"] ?? 'No Description Available',
               'image_url': song["image_url"] ?? '',
-              'line': "" ?? 'No line',
+              'line': "",
               'r_year': song["r_year"] ?? 'Not released',
               'genre': (song["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (song["artists"] ?? []).join(', ') ?? 'No cast',
-              'director': "" ?? 'No director',
+              'director': "",
               'movie_id' : song["song_id"].toString(),
               'language': song["album"]
             })
@@ -36,14 +37,14 @@ Future<List<Map<String, String>>> fetchSongsByTrack(String name) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((song) => {
-              'title': song["song"] ?? 'No vailable',
-              'description': "" ,
+              'title': song["song"] ?? 'No Title Available',
+              'description': song["song_url"] ?? 'No Description Available',
               'image_url': song["image_url"] ?? '',
-              'line': "" ,
+              'line': "",
               'r_year': song["r_year"] ?? 'Not released',
               'genre': (song["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (song["artists"] ?? []).join(', ') ?? 'No cast',
-              'director': "" ,
+              'director': "",
               'movie_id' : song["song_id"].toString(),
               'language': song["album"]
             })
@@ -61,14 +62,14 @@ Future<List<Map<String, String>>> fetchSongsByArtist(String artist) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((song) => {
-              'title': song["song"] ?? 'No vailable',
-              'description': "" ,
+              'title': song["song"] ?? 'No Title Available',
+              'description': song["song_url"] ?? 'No Description Available',
               'image_url': song["image_url"] ?? '',
-              'line': "" ,
+              'line': "",
               'r_year': song["r_year"] ?? 'Not released',
               'genre': (song["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (song["artists"] ?? []).join(', ') ?? 'No cast',
-              'director': "" ,
+              'director': "",
               'movie_id' : song["song_id"].toString(),
               'language': song["album"]
             })
@@ -87,14 +88,14 @@ Future<List<Map<String, String>>> fetchSongsByGenre(String genre) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((song) => {
-              'title': song["song"] ?? 'No vailable',
-              'description': "" ,
+              'title': song["song"] ?? 'No Title Available',
+              'description': song["song_url"] ?? 'No Description Available',
               'image_url': song["image_url"] ?? '',
-              'line': "" ,
+              'line': "",
               'r_year': song["r_year"] ?? 'Not released',
               'genre': (song["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (song["artists"] ?? []).join(', ') ?? 'No cast',
-              'director': "" ,
+              'director': "",
               'movie_id' : song["song_id"].toString(),
               'language': song["album"]
             })
@@ -113,14 +114,14 @@ Future<List<Map<String, String>>> fetchSongsByAlbum(String album) async {
     final List<dynamic> data = json.decode(response.body);
     return data
         .map<Map<String, String>>((song) => {
-              'title': song["song"] ?? 'No vailable',
-              'description': "" ,
+              'title': song["song"] ?? 'No Title Available',
+              'description': song["song_url"] ?? 'No Description Available',
               'image_url': song["image_url"] ?? '',
-              'line': "" ,
+              'line': "",
               'r_year': song["r_year"] ?? 'Not released',
               'genre': (song["genre"] ?? []).join(', ') ?? 'No genre',
               'cast': (song["artists"] ?? []).join(', ') ?? 'No cast',
-              'director': "" ,
+              'director': "",
               'movie_id' : song["song_id"].toString(),
               'language': song["album"]
             })
@@ -128,4 +129,204 @@ Future<List<Map<String, String>>> fetchSongsByAlbum(String album) async {
   } else {
     throw Exception('Failed to fetch song by genre: ${response.statusCode}');
   }
+}
+
+class AudioPlayerHelper {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  Future<void> playFullAudio(String audioUrl) async {
+    try {
+      await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(audioUrl)));
+      await _audioPlayer.play();
+    } catch (e) {
+      print('Error playing audio: $e');
+      throw Exception('Failed to play audio: ${e.toString()}');
+    }
+  }
+
+  void dispose() {
+    // Dispose this instance of the player
+    _audioPlayer.dispose();
+  }
+}
+
+void showSongDescription(BuildContext context, Map<String, dynamic> movie) {
+  final AudioPlayerHelper audioPlayerHelper = AudioPlayerHelper();
+  String statusMessage = '';
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      double screenWidth = MediaQuery.of(context).size.width;
+      double screenHeight = MediaQuery.of(context).size.height;
+
+      double dynamicImageWidth = screenWidth * 0.45;
+      double dynamicImageHeight = screenHeight * 0.3;
+
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setModalState) {
+          void playAudio(String audioUrl) async {
+            try {
+              setModalState(() {
+                statusMessage = 'Preparing to play audio...';
+              });
+              await audioPlayerHelper.playFullAudio(audioUrl);
+              setModalState(() {
+                statusMessage = 'Audio playing successfully!';
+              });
+            } catch (e) {
+              setModalState(() {
+                statusMessage = 'Error: ${e.toString()}';
+              });
+            }
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(0),
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/bg.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                movie['image_url'] != ''
+                                    ? Container(
+                                        width: dynamicImageWidth,
+                                        height: dynamicImageHeight,
+                                        margin: const EdgeInsets.only(right: 15),
+                                        child: Image.network(
+                                          movie['image_url'] ?? '',
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : const SizedBox(),
+                                const SizedBox(height: 10),
+                                Text(
+                                  movie['r_year'] ?? 'Not Released',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                const SizedBox(height: 5),
+                                SizedBox(
+                                  width: dynamicImageWidth,
+                                  child: Text(
+                                    movie['genre'] ?? 'No Genre',
+                                    style: const TextStyle(fontSize: 16),
+                                    softWrap: true,
+                                    overflow: TextOverflow.visible,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    movie['title'],
+                                    style: const TextStyle(
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Oswald'),
+                                    softWrap: true,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 3,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  // Display Language
+                                  Text(
+                                    'Album: ${movie['language'] ?? 'N/A'}',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 15),
+                                  Text(
+                                    'Artists: ${movie['cast']}',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 35),
+                                  GestureDetector(
+                                    onTap: () {
+                                      final audioUrl =
+                                          movie["description"] ??
+                                              'https://example.com/audio.mp3'; // Replace with your audio URL
+                                      if (audioUrl.isNotEmpty) {
+                                        playAudio(audioUrl);
+                                      } else {
+                                        setModalState(() {
+                                          statusMessage = 'No audio available!';
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      width: 80,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.black.withOpacity(0.8),
+                                      ),
+                                      child: Icon(
+                                        Icons.play_arrow,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // Status Message
+                        Center(
+                          child: Text(
+                            statusMessage,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: statusMessage.contains('Error')
+                                  ? Colors.red
+                                  : Colors.green,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Play Audio Button at Bottom-Right
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  ).whenComplete(() => audioPlayerHelper.dispose()); // Dispose audio player on sheet close
 }

@@ -108,11 +108,8 @@ Future<List<Map<String, String>>> fetchAllMovies() async {
 }
 
 
-
-
-
 // Show movie description popup
-void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
+void showMovieDescription(BuildContext context, Map<String, dynamic> movie) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -204,12 +201,12 @@ void showDescriptionPopup(BuildContext context, Map<String, dynamic> movie) {
                           ),
                           const SizedBox(height: 15),
                           Text(
-                            '${movie['director']}',
+                            'Director: ${movie['director']}',
                             style: const TextStyle(fontSize: 16),
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            '${movie['cast']}',
+                            'Cast: ${movie['cast']}',
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],

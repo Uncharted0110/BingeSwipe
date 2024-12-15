@@ -39,6 +39,8 @@ dependencies:
   provider: ^6.1.2
   syncfusion_flutter_charts: ^28.1.33
   syncfusion_flutter_treemap: ^28.1.33
+  just_audio: ^0.9.42
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:

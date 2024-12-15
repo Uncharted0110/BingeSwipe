@@ -113,6 +113,7 @@ def getAll_songs():
             "song_id" : 1,
             '_id': 0,
             "album": 1,
+            "song_url":1,
 
         }).limit(6))
         
@@ -172,6 +173,7 @@ def search_song_by_name():
             "song_id" : 1,
             '_id': 0,
             "album": 1,
+            "song_url":1,
         }))
 
 
@@ -210,6 +212,7 @@ def search_song_by_album():
             "song_id" : 1,
             '_id': 0,
             "album": 1,
+            "song_url":1,
         }))
 
         if not songs:
@@ -288,6 +291,7 @@ def search_song_by_genre():
             "song_id" : 1,
             '_id': 0,
             "album": 1,
+            "song_url":1,
         }))
 
         if not song:
@@ -366,6 +370,7 @@ def search_song_by_artist():
             "song_id" : 1,
             '_id': 0,
             "album": 1,
+            "song_url":1,
         }))
 
         if not songs:
