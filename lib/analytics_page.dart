@@ -75,6 +75,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> with SingleTickerProvider
             Tab(text: 'Songs'),
           ],
           labelColor: Colors.white,
+          unselectedLabelColor: Colors.grey, // Optional for unselected tab color
+          labelStyle: const TextStyle(
+            fontSize: 18, // Increased font size for selected tab
+            fontWeight: FontWeight.bold,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 16, // Font size for unselected tab
+          ),
         ),
       ),
       body: Stack(
