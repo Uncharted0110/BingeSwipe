@@ -16,7 +16,7 @@ class GenreAnalyticsProvider extends ChangeNotifier {
     for (var genre in genres) {
       _movieGenreFrequency[genre] = (_movieGenreFrequency[genre] ?? 0) + 1;
     }
-    _totalMoviesLiked += genres.length;  // Increment by number of genres added
+    _totalMoviesLiked += 1;  // Increment by number of genres added
     notifyListeners();
   }
 
@@ -25,7 +25,7 @@ class GenreAnalyticsProvider extends ChangeNotifier {
     for (var genre in genres) {
       _songGenreFrequency[genre] = (_songGenreFrequency[genre] ?? 0) + 1;
     }
-    _totalSongsLiked += genres.length;  // Increment by number of genres added
+    _totalSongsLiked += 1;  // Increment by number of genres added
     notifyListeners();
   }
 

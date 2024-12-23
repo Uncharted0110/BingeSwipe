@@ -21,47 +21,58 @@ class _SignupPageState extends State<SignupPage> {
 
   // Sign up logic
   void _signup() async {
-    if (_passwordController.text == _confirmPasswordController.text) {
-      try {
-        final response = await http.post(
-          Uri.parse('http://127.0.0.1:5000/signup'), // Your Flask server URL
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({
-            'username': _usernameController.text,
-            'password': _passwordController.text,
-            'email': _emailController.text,
-            'confirm_password': _confirmPasswordController.text,
-          }),
-        );
+  final email = _emailController.text;
+  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-        if (response.statusCode == 200) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginPage()),
-          );
-        } else if(response.statusCode == 400){
-          final responseBody = json.decode(response.body);
-          setState(() {
-            _errorMessage = responseBody['error'] ?? 'User already exists';
-          });
-        } 
-        else {
-          final responseBody = json.decode(response.body);
-          setState(() {
-            _errorMessage = responseBody['error'] ?? 'Signup failed, please try again.';
-          });
-        }
-      } catch (e) {
+  if (!emailRegex.hasMatch(email)) {
+    setState(() {
+      _errorMessage = 'Please enter a valid email address.';
+    });
+    return;
+  }
+
+  if (_passwordController.text == _confirmPasswordController.text) {
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5000/signup'), // Your Flask server URL
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _usernameController.text,
+          'password': _passwordController.text,
+          'email': _emailController.text,
+          'confirm_password': _confirmPasswordController.text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      } else if (response.statusCode == 400) {
+        final responseBody = json.decode(response.body);
         setState(() {
-          _errorMessage = 'An error occurred: $e';
+          _errorMessage = responseBody['error'] ?? 'User already exists';
+        });
+      } else {
+        final responseBody = json.decode(response.body);
+        setState(() {
+          _errorMessage =
+              responseBody['error'] ?? 'Signup failed, please try again.';
         });
       }
-    } else {
+    } catch (e) {
       setState(() {
-        _errorMessage = 'Passwords do not match';
+        _errorMessage = 'An error occurred: $e';
       });
     }
+  } else {
+    setState(() {
+      _errorMessage = 'Passwords do not match';
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
