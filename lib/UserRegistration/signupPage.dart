@@ -21,15 +21,15 @@ class _SignupPageState extends State<SignupPage> {
 
   // Sign up logic
   void _signup() async {
-  final email = _emailController.text;
-  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-
-  if (!emailRegex.hasMatch(email)) {
-    setState(() {
-      _errorMessage = 'Please enter a valid email address.';
-    });
-    return;
-  }
+  //final email = _emailController.text;
+  //final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+//
+  //if (!emailRegex.hasMatch(email)) {
+  //  setState(() {
+  //    _errorMessage = 'Please enter a valid email address.';
+  //  });
+  //  return;
+  //}
 
   if (_passwordController.text == _confirmPasswordController.text) {
     try {
@@ -49,18 +49,43 @@ class _SignupPageState extends State<SignupPage> {
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
         );
-      } else if (response.statusCode == 400) {
+      } else if (response.statusCode == 401) {
         final responseBody = json.decode(response.body);
         setState(() {
-          _errorMessage = responseBody['error'] ?? 'User already exists';
+          _errorMessage = responseBody['message'] ?? 'All fields are required';
+        });
+      } else if (response.statusCode == 402) {
+        final responseBody = json.decode(response.body);
+        setState(() {
+          _errorMessage = responseBody['message'] ?? 'Password must be at least 8 characters long';
+        });
+      } else if (response.statusCode == 403) {
+        final responseBody = json.decode(response.body);
+        setState(() {
+          _errorMessage = responseBody['message'] ?? 'Invalid email format';
+        });
+      } else if (response.statusCode == 405) {
+        final responseBody = json.decode(response.body);
+        setState(() {
+          _errorMessage = responseBody['message'] ?? 'Username already exists';
+        });
+      } else if (response.statusCode == 406) {
+        final responseBody = json.decode(response.body);
+        setState(() {
+          _errorMessage = responseBody['message'] ?? 'Email already exists';
+        });
+      } else if (response.statusCode == 407) {
+        final responseBody = json.decode(response.body);
+        setState(() {
+          _errorMessage = responseBody['message'] ?? 'A duplicate key error occurred';
         });
       } else {
         final responseBody = json.decode(response.body);
         setState(() {
-          _errorMessage =
-              responseBody['error'] ?? 'Signup failed, please try again.';
+          _errorMessage = responseBody['message'] ?? 'Signup failed, please try again.';
         });
       }
+
     } catch (e) {
       setState(() {
         _errorMessage = 'An error occurred: $e';

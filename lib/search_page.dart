@@ -235,7 +235,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
                   style: const TextStyle(color: Colors.white),
                   cursorColor: Colors.white,
                   decoration: InputDecoration(
-                    hintText: 'Search by $searchType',
+                    hintText: 'Search by...',
                     hintStyle: const TextStyle(color: Colors.grey),
                     border: InputBorder.none,
                   ),

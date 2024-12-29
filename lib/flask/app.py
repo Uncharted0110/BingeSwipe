@@ -6,6 +6,7 @@ import json
 from bson import ObjectId
 import random
 from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo.errors import DuplicateKeyError
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -460,18 +461,45 @@ def signup():
     email = data.get('email')
     password = data.get('password')
 
-    # Check if the username already exists
+    # Check if the required fields are present
+    if not username or not email or not password:
+        return jsonify({"message": "All fields are required"}), 401
+
+    # Validate password length (MongoDB schema already checks for this too)
+    if len(password) < 8:
+        return jsonify({"message": "Password must be at least 8 characters long"}), 402
+
+    # Email pattern validation (You can use regex to validate email format)
+    import re
+    email_pattern = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    if not re.match(email_pattern, email):
+        return jsonify({"message": "Invalid email format"}), 403
+
+    # Check if the username or email already exists in the database
     if User_collection.find_one({"username": username}):
-        return jsonify({"message": "Username already exists"}), 400
+        return jsonify({"message": "Username already exists"}), 405
+    if User_collection.find_one({"email": email}):
+        return jsonify({"message": "Email already exists"}), 406
 
-    password = generate_password_hash(password)
+    # Hash the password
+    hashed_password = generate_password_hash(password)
 
-    # Insert new user into the database
-    User_collection.insert_one({
-        "username": username,
-        "password": password,
-        "email" : email
-    })
+    try:
+        # Insert new user into the database
+        User_collection.insert_one({
+            "username": username,
+            "password": hashed_password,
+            "email": email
+        })
+    except DuplicateKeyError as e:
+        # Catch duplicate key errors if schema validation allows them
+        error_message = str(e)
+        if "username" in error_message:
+            return jsonify({"message": "Username already exists"}), 405
+        elif "email" in error_message:
+            return jsonify({"message": "Email already exists"}), 406
+        else:
+            return jsonify({"message": "A duplicate key error occurred"}), 407
 
     return jsonify({"message": "Sign up successful!"}), 200
 
