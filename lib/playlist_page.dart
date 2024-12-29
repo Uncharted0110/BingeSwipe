@@ -62,8 +62,8 @@ class MovieListOverlay extends StatelessWidget {
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: const AssetImage('assets/images/bg.jpg'),
-                  fit: BoxFit.cover, // Changed to fitHeight
-                  alignment: Alignment.centerLeft, // Align to left vertically
+                  fit: BoxFit.cover,
+                  alignment: Alignment.centerLeft,
                   colorFilter: ColorFilter.mode(
                     Colors.white.withOpacity(0.8),
                     BlendMode.lighten,
@@ -78,7 +78,7 @@ class MovieListOverlay extends StatelessWidget {
               maxHeight: MediaQuery.of(context).size.height * 0.75,
             ),
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: fetchMoviesForPlaylist(playlistName),
+              future: fetchItemsForPlaylist(playlistName), // Fetch items for the playlist
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -94,43 +94,43 @@ class MovieListOverlay extends StatelessWidget {
                   return ListView.builder(
                     itemCount: movies.length,
                     itemBuilder: (context, index) {
-                    final movie = movies[index];
-                    return Card(
-                      margin: const EdgeInsets.all(8), // Reduced margin
-                      color: Colors.black,
-                      elevation: 3, // Reduced elevation
-                      child: ListTile(
-                        horizontalTitleGap: 3,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5), // Reduced padding
-                        leading: movie['image_url'] != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  movie['image_url'],
-                                  width: 50, // Reduced width
-                                  height: 150, // Reduced height
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                    : const Icon(Icons.movie, size: 40, color: Colors.white), // Reduced icon size
-                      title: Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Text(
-                          movie['title'],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Oswald',
-                            fontSize: 28, // Reduced font size
+                      final movie = movies[index];
+                      return Card(
+                        margin: const EdgeInsets.all(8),
+                        color: Colors.black,
+                        elevation: 3,
+                        child: ListTile(
+                          horizontalTitleGap: 3,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                          leading: movie['image_url'] != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    movie['image_url'],
+                                    width: 50,
+                                    height: 150,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(Icons.movie, size: 40, color: Colors.white),
+                          title: Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Text(
+                              movie['title'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Oswald',
+                                fontSize: 28,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
-                },
-                );
                 }
               },
             ),
@@ -168,9 +168,9 @@ class _PlaylistPageState extends State<PlaylistPage> {
             child: Container(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                image: AssetImage('images/bg.jpg'),
-                fit: BoxFit.cover,
-              ),
+                  image: AssetImage('images/bg.jpg'),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -201,16 +201,16 @@ class _PlaylistPageState extends State<PlaylistPage> {
                     } else if (snapshot.hasError) {
                       return const Center(
                         child: Text(
-                          'Failed to load playlists', 
-                          style: TextStyle(color: Colors.white)
-                        )
+                          'Failed to load playlists',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       );
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return const Center(
                         child: Text(
-                          'No playlists available', 
-                          style: TextStyle(color: Colors.white)
-                        )
+                          'No playlists available',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       );
                     } else {
                       final playlists = snapshot.data!;

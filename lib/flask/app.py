@@ -388,28 +388,29 @@ def add_to_playlist():
     data = request.get_json()
 
     playlist_name = data['playlist_name']
-    movie_id = int(data['movie_id'])
+    item_id = int(data['item_id'])
+    item_type = data['item_type']  # "movie" or "song"
 
-    if not playlist_name or not movie_id:
+    if not playlist_name or not item_id or not item_type:
         return jsonify({'error': 'Invalid input'}), 400
 
     # Check if playlist exists
     playlist = Playlist_collection.find_one({"name": playlist_name})
     
     if not playlist:
-        # If playlist doesn't exist, create a new one with the movie ID
+        # If playlist doesn't exist, create a new one with the item ID and type
         Playlist_collection.insert_one({
             "name": playlist_name,
-            "movie_id": [movie_id]
+            "items": [{"item_id": item_id, "item_type": item_type}]
         })
     else:
-        # If playlist exists, add the movie ID to the list of movie IDs
+        # If playlist exists, add the item ID and type to the list
         Playlist_collection.update_one(
             {"name": playlist_name},
-            {"$push": {"movie_id": movie_id}}
+            {"$push": {"items": {"item_id": item_id, "item_type": item_type}}}
         )
 
-    return jsonify({"message": "Movie added to playlist"}), 200
+    return jsonify({"message": "Item added to playlist"}), 200
 
 
 @app.route('/get_playlists', methods=['GET'])
@@ -417,17 +418,20 @@ def get_playlists():
     playlists = list(Playlist_collection.find({}, {"name": 1, "_id": 0}))  # Modify based on your DB schema
     return jsonify([playlist for playlist in playlists])
 
+
 @app.route('/get_playlist/<name>', methods=['GET'])
 def get_playlist(name):
-    # Query to find movies by name
-    playlist = Playlist_collection.find({"name": name}, {"movie_id": 1, "_id": 0})
-    
-    # Convert cursor to list
-    movie_ids = [movie['movie_id'] for movie in playlist]
+    # Query to find playlist by name
+    playlist = Playlist_collection.find_one({"name": name}, {"items": 1, "_id": 0})
 
-    movie_ids = [item for sublist in movie_ids for item in sublist]
+    if not playlist:
+        return jsonify({'message': 'Playlist not found'}), 404
 
-    # Fetch detailed movie data for the retrieved IDs
+    # Fetch detailed data for movies and songs
+    movie_ids = [item['item_id'] for item in playlist['items'] if item['item_type'] == 'movie']
+    song_ids = [item['item_id'] for item in playlist['items'] if item['item_type'] == 'song']
+
+    # Fetch detailed movie data
     movies = list(Movie_collection.find({"movie_id": {"$in": movie_ids}}, {
         "title": 1, 
         "description": 1, 
@@ -435,10 +439,24 @@ def get_playlist(name):
         '_id': 0
     }))
 
-    if not movies:
-        return jsonify({'message': 'No movies retrieved for the actor'}), 404
-        
-    return jsonify(movies), 200
+    # Fetch detailed song data (assuming you have a Song_collection)
+    songs = list(Song_collection.find({"song_id": {"$in": song_ids}}, {
+        "song": 1, 
+        "artist": 1,
+        "album": 1,
+        "image_url": 1,
+        '_id': 0
+    }))
+
+    # Combine movies and songs data into a single list
+    playlist_data = movies + songs
+
+    # Print only the song names to the terminal
+    for song in songs:
+        print("Song Name:", song.get("song", "No Name Available"))
+
+    return jsonify(playlist_data), 200
+
 
 @app.route('/login', methods=['POST'])
 def login():

@@ -237,7 +237,7 @@ void showMovieDescription(BuildContext context, Map<String, dynamic> movie) {
                     String? playlistName = await _showPlaylistDialog(context);
 
                     if (playlistName != null && playlistName.isNotEmpty) {
-                      await _addMovieToPlaylist(playlistName, movie['movie_id']);
+                      await _addItemToPlaylist(playlistName, movie['movie_id'], 'movie');
                     }
                   },
                 ),
@@ -315,24 +315,24 @@ Future<String?> _showPlaylistDialog(BuildContext context) async {
   );
 }
 
-// Function to send movie ID to Flask backend
-Future<void> _addMovieToPlaylist(String playlistName, String movieId) async {
+// Function to send item (movie or song) ID to Flask backend
+Future<void> _addItemToPlaylist(String playlistName, String itemId, String itemType) async {
   final response = await http.post(
     Uri.parse('http://127.0.0.1:5000/add_to_playlist'),
     headers: {'Content-Type': 'application/json'},
     body: json.encode({
       'playlist_name': playlistName,
-      'movie_id': movieId,
+      'item_id': itemId,
+      'item_type': itemType, // "movie" or "song"
     }),
   );
 
   if (response.statusCode == 200) {
-    print('Movie added to playlist!');
+    print('$itemType added to playlist!');
   } else {
-    print('Failed to add movie to playlist.');
+    print('Failed to add $itemType to playlist.');
   }
 }
-
 
 // Function to fetch existing playlists from the backend
 Future<List<String>> fetchExistingPlaylists() async {
@@ -347,21 +347,26 @@ Future<List<String>> fetchExistingPlaylists() async {
   }
 }
 
-// Function to fetch the movies for a given playlist
-Future<List<Map<String, dynamic>>> fetchMoviesForPlaylist(String playlistName) async {
+// Function to fetch movies and songs for a given playlist
+Future<List<Map<String, dynamic>>> fetchItemsForPlaylist(String playlistName) async {
   var url = 'http://localhost:5000/get_playlist/$playlistName';
-  final response = await http.get( Uri.parse(url));
+  final response = await http.get(Uri.parse(url));
 
   if (response.statusCode == 200) {
     final List<dynamic> data = json.decode(response.body);
-    return data
-        .map<Map<String, String>>((movie) => {
-              'title': movie["title"] ?? 'No Title Available',
-              'description': movie["description"] ?? 'No Description Available',
-              'image_url': movie["image_url"] ?? '',
-            })
-        .toList();
+
+    // Handle both movies and songs in the playlist
+    List<Map<String, String>> items = [];
+    for (var item in data) {
+      if (true) {
+        items.add({
+          'title': item["title"] ?? item["song"],
+          'image_url': item["image_url"] ?? '',
+        });
+      }
+    }
+    return items;
   } else {
-    throw Exception('Failed to fetch movies by title: ${response.statusCode}');
+    throw Exception('Failed to fetch items for playlist: ${response.statusCode}');
   }
 }
