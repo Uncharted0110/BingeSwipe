@@ -144,41 +144,53 @@ class _AnalyticsPageState extends State<AnalyticsPage> with SingleTickerProvider
 
               // Treemap Visualization
               Expanded(
-                child: SfTreemap(
-                  dataCount: sortedGenres.length,
-                  weightValueMapper: (int index) => sortedGenres[index].value.toDouble(),
-                  levels: [
-                    TreemapLevel(
-                      groupMapper: (int index) => sortedGenres[index].key,
-                      colorValueMapper: (TreemapTile tile) {
-                        // Return the color based on the index of the genre
-                        int index = tile.indices[0];
-                        return colorPalette[index % colorPalette.length];
-                      },
-                      color: Colors.transparent,
-                      labelBuilder: (BuildContext context, TreemapTile tile) {
-                        return Center(
-                          child: Text(
-                            '${tile.group}\n${tile.weight.toInt()}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
+                child: sortedGenres.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Swipe to see analytics',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      },
-                    ),
-                  ],
-                  onSelectionChanged: (TreemapTile tile) {
-                    setState(() {
-                      final selectedGenre = sortedGenres[tile.indices[0]].key;
-                      _selectedGenre = _selectedGenre == selectedGenre ? null : selectedGenre;
-                    });
-                  },
-                ),
+                        ),
+                      )
+                    : SfTreemap(
+                        dataCount: sortedGenres.length,
+                        weightValueMapper: (int index) => sortedGenres[index].value.toDouble(),
+                        levels: [
+                          TreemapLevel(
+                            groupMapper: (int index) => sortedGenres[index].key,
+                            colorValueMapper: (TreemapTile tile) {
+                              // Return the color based on the index of the genre
+                              int index = tile.indices[0];
+                              return colorPalette[index % colorPalette.length];
+                            },
+                            color: Colors.transparent,
+                            labelBuilder: (BuildContext context, TreemapTile tile) {
+                              return Center(
+                                child: Text(
+                                  '${tile.group}\n${tile.weight.toInt()}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                        onSelectionChanged: (TreemapTile tile) {
+                          setState(() {
+                            final selectedGenre = sortedGenres[tile.indices[0]].key;
+                            _selectedGenre = _selectedGenre == selectedGenre ? null : selectedGenre;
+                          });
+                        },
+                      ),
               ),
+
             ],
           ),
         ],

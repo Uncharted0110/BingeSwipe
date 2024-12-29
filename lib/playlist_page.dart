@@ -15,22 +15,34 @@ class PlaylistCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-      elevation: 0,
+      elevation: 8, // Added elevation for a shadow effect
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 28, 15, 21),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white, width: 2),
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 6,
+                offset: const Offset(0, 4), // Shadow direction
+              ),
+            ],
           ),
-          child: Text(
-            playlistName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          child: Center(
+            child: Text(
+              playlistName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2, // Added spacing for a cleaner look
+              ),
             ),
           ),
         ),
@@ -77,8 +89,8 @@ class MovieListOverlay extends StatelessWidget {
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.75,
             ),
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: fetchItemsForPlaylist(playlistName), // Fetch items for the playlist
+            child: FutureBuilder<List<Map<String, dynamic>>>( // Fetch items for the playlist
+              future: fetchItemsForPlaylist(playlistName),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -97,11 +109,14 @@ class MovieListOverlay extends StatelessWidget {
                       final movie = movies[index];
                       return Card(
                         margin: const EdgeInsets.all(8),
-                        color: Colors.black,
-                        elevation: 3,
+                        color: Colors.black.withOpacity(0.6),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         child: ListTile(
                           horizontalTitleGap: 3,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                           leading: movie['image_url'] != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
@@ -116,12 +131,12 @@ class MovieListOverlay extends StatelessWidget {
                           title: Padding(
                             padding: const EdgeInsets.only(left: 10),
                             child: Text(
-                              movie['title'],
+                              movie['song'] ?? movie['title'], // Song name if available, otherwise fallback to title
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Oswald',
-                                fontSize: 28,
+                                fontSize: 22,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -234,3 +249,4 @@ class _PlaylistPageState extends State<PlaylistPage> {
     );
   }
 }
+

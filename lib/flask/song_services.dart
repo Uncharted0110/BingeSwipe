@@ -242,6 +242,7 @@ void showSongDescription(BuildContext context, Map<String, dynamic> movie) {
                                     overflow: TextOverflow.visible,
                                   ),
                                 ),
+                                SizedBox(height: 10,),
                                 IconButton(
                                   icon: Icon(Icons.playlist_add, size: 30),
                                   onPressed: () async {
