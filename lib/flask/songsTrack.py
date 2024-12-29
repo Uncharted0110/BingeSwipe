@@ -91,8 +91,8 @@ def store_to_mongodb(track_details, database_name="BingeSwipe", collection_name=
 
 
 # Example usage
-access_token = "BQCDJp_1C_s6sC8aSBH3D8_v4h2Mtcn8VoY3-UpxHfT47LqGRss4Gmq-VRw3JbkaDUcTYyKJ-HpUukCGLEnIB6hvWhsMCHxB0f5kAE-9oBRouW7O7Xk"  # Replace with your access token
-song_name = "yeh raat bandish bandits"  # Replace with the song name you want to search for
+access_token = "BQBLPbwE2rB0V9IM9eJJeGxxmeqyBVWNK50ADrZ1ZXu_sIXlO8fgQ2_i0MboHcjcWzFUbOQ9WosMa90Z708zTyPRSHv632onGQV9mp1fZ3gLTIMKEZ4"  # Replace with your access token
+song_name = "bye bye bye"  # Replace with the song name you want to search for
 
 track_id, message = search_track(song_name, access_token)
 if track_id:

@@ -34,12 +34,10 @@ except errors.ConnectionFailure as e:
 
 @app.route('/moviesSwipe', methods=['GET'])
 def get_movies():
-    random_numbers = random.sample(range(1, 23), 3)
-
     try:
         total_movies = Movie_collection.count_documents({})
         
-        random_numbers = random.sample(range(1, total_movies + 1), 3)
+        random_numbers = random.sample(range(1, total_movies + 1), 5)
 
         movies = []
 
@@ -61,7 +59,7 @@ def get_movies():
 def get_songs():
     total_songs = Song_collection.count_documents({})
 
-    random_numbers = random.sample(range(1, total_songs + 1), 3)
+    random_numbers = random.sample(range(1, total_songs + 1), 5)
 
     try:
         songs = []
@@ -451,9 +449,7 @@ def get_playlist(name):
     # Combine movies and songs data into a single list
     playlist_data = movies + songs
 
-    # Print only the song names to the terminal
-    for song in songs:
-        print("Song Name:", song.get("song", "No Name Available"))
+    print("Playlist Data:", playlist_data)
 
     return jsonify(playlist_data), 200
 
