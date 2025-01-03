@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:just_audio/just_audio.dart';
 
 Future<List<Map<String, String>>> fetchAllSongs() async {
-  var url = "http://127.0.0.1:5000/getAllSongs"; // Endpoint for all movies
+  var url = "http://127.0.0.1:5000/getAllSongs";
   final response = await http.get(Uri.parse(url));
 
   if (response.statusCode == 200) {
@@ -28,7 +28,7 @@ Future<List<Map<String, String>>> fetchAllSongs() async {
   }
 }
 
-// Fetch movies by title
+// Fetch songs by title
 Future<List<Map<String, String>>> fetchSongsByTrack(String name) async {
   var url = "http://127.0.0.1:5000/searchSongByTrack?name=$name";
   final response = await http.get(Uri.parse(url));
@@ -54,8 +54,9 @@ Future<List<Map<String, String>>> fetchSongsByTrack(String name) async {
   }
 }
 
+// Fetch songs by artists
 Future<List<Map<String, String>>> fetchSongsByArtist(String artist) async {
-  var url = "http://127.0.0.1:5000//searchSongByArtist?artist=$artist"; // Corrected endpoint
+  var url = "http://127.0.0.1:5000//searchSongByArtist?artist=$artist";
   final response = await http.get(Uri.parse(url));
 
   if (response.statusCode == 200) {

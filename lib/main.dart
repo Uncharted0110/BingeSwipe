@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BingeSwipe',
-      home: const LoginPage(), // Start with the LoginPage
+      home: const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }

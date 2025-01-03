@@ -25,7 +25,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (_newPasswordController.text == _retypePasswordController.text) {
       try {
         final response = await http.post(
-          Uri.parse('http://127.0.0.1:5000/reset_password'), // Your Flask server URL
+          Uri.parse('http://127.0.0.1:5000/reset_password'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'username': _usernameController.text,

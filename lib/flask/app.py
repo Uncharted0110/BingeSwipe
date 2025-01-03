@@ -3,11 +3,10 @@ from flask_cors import CORS
 from pymongo import MongoClient, errors
 import logging
 import json
-from bson import ObjectId
+from bson import ObjectId, json_util
 import random
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
-
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ObjectId):
@@ -31,6 +30,8 @@ try:
     Album_collection = db["Albums"]
 except errors.ConnectionFailure as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
+
+current_user_id = None
 
 @app.route('/moviesSwipe', methods=['GET'])
 def get_movies():
@@ -384,6 +385,10 @@ def search_song_by_artist():
 @app.route('/add_to_playlist', methods=['POST'])
 def add_to_playlist():
     data = request.get_json()
+    global current_user_id
+
+    # Convert current_user_id to integer
+    user_id = int(current_user_id)
 
     playlist_name = data['playlist_name']
     item_id = int(data['item_id'])
@@ -392,35 +397,74 @@ def add_to_playlist():
     if not playlist_name or not item_id or not item_type:
         return jsonify({'error': 'Invalid input'}), 400
 
-    # Check if playlist exists
-    playlist = Playlist_collection.find_one({"name": playlist_name})
+    # Check if playlist exists for this specific user
+    playlist = Playlist_collection.find_one({
+        "name": playlist_name, 
+        "user_id": user_id
+    })
     
     if not playlist:
-        # If playlist doesn't exist, create a new one with the item ID and type
+        # If playlist doesn't exist for this user, create a new one
         Playlist_collection.insert_one({
             "name": playlist_name,
-            "items": [{"item_id": item_id, "item_type": item_type}]
+            "items": [{"item_id": item_id, "item_type": item_type}],
+            "user_id": user_id,
         })
+        return jsonify({"message": "New playlist created with item"}), 201
     else:
-        # If playlist exists, add the item ID and type to the list
-        Playlist_collection.update_one(
-            {"name": playlist_name},
-            {"$push": {"items": {"item_id": item_id, "item_type": item_type}}}
+        # Check if item already exists in the playlist
+        if any(item['item_id'] == item_id and item['item_type'] == item_type 
+               for item in playlist['items']):
+            return jsonify({"message": "Item already exists in playlist"}), 409
+
+        # If playlist exists, add the item using both name and user_id in the query
+        result = Playlist_collection.update_one(
+            {
+                "name": playlist_name,
+                "user_id": user_id  # Added user_id to the query
+            },
+            {
+                "$push": {
+                    "items": {
+                        "item_id": item_id,
+                        "item_type": item_type,
+                    }
+                }
+            }
         )
 
-    return jsonify({"message": "Item added to playlist"}), 200
+        if result.modified_count == 0:
+            return jsonify({"error": "Failed to update playlist"}), 500
 
+        return jsonify({"message": "Item added to playlist"}), 200
 
 @app.route('/get_playlists', methods=['GET'])
 def get_playlists():
-    playlists = list(Playlist_collection.find({}, {"name": 1, "_id": 0}))  # Modify based on your DB schema
-    return jsonify([playlist for playlist in playlists])
+    global current_user_id
+    print("Current user ID:", current_user_id)
+    
+    try:
+        user_id = int(current_user_id) if current_user_id else None
+        playlists = list(Playlist_collection.find(
+            {"user_id": user_id}
+        ))
+        
+        # Use json_util.dumps to handle MongoDB-specific types
+        return json_util.dumps(playlists), 200, {'ContentType': 'application/json'}
+        
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/get_playlist/<name>', methods=['GET'])
 def get_playlist(name):
+    global current_user_id
+    print("Current user ID hahaha:", current_user_id, type(current_user_id))
+    user_id = int(current_user_id) if current_user_id else None
+    print("\nType od user_id: " , type(user_id))
     # Query to find playlist by name
-    playlist = Playlist_collection.find_one({"name": name}, {"items": 1, "_id": 0})
+    playlist = Playlist_collection.find_one({"name": name, "user_id": user_id}, {"items": 1, "_id": 0})
 
     if not playlist:
         return jsonify({'message': 'Playlist not found'}), 404
@@ -456,6 +500,9 @@ def get_playlist(name):
 
 @app.route('/login', methods=['POST'])
 def login():
+    # Declare that we're using the global variable
+    global current_user_id
+    
     data = request.get_json()  # Get JSON data from the request
     username = data.get('username')
     password = data.get('password')
@@ -464,9 +511,22 @@ def login():
     user = User_collection.find_one({"username": username})
 
     if user and check_password_hash(user['password'], password):
-        return jsonify({"message": "Login successful!"}), 200
+        # Update the global current_user_id
+        current_user_id = str(user['user_id'])  # Convert ObjectId to string for JSON serialization
+        print(current_user_id)
+        return jsonify({"message": "Login successful!", "user_id": current_user_id}), 200
     else:
+        current_user_id = None  # Clear the user ID if login fails
         return jsonify({"message": "Invalid username or password"}), 400
+
+# Example of another route using the global current_user_id
+@app.route('/check_auth', methods=['GET'])
+def check_auth():
+    global current_user_id
+    if current_user_id:
+        return jsonify({"authenticated": True, "user_id": current_user_id}), 200
+    return jsonify({"authenticated": False}), 401
+
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -494,6 +554,9 @@ def signup():
         return jsonify({"message": "Username already exists"}), 405
     if User_collection.find_one({"email": email}):
         return jsonify({"message": "Email already exists"}), 406
+    
+    total_docs = User_collection.count_documents({})
+    user_id = total_docs + 1  # New user ID
 
     # Hash the password
     hashed_password = generate_password_hash(password)
@@ -501,6 +564,7 @@ def signup():
     try:
         # Insert new user into the database
         User_collection.insert_one({
+            "user_id": user_id,
             "username": username,
             "password": hashed_password,
             "email": email

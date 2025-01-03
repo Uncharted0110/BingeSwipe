@@ -52,7 +52,7 @@ Widget build(BuildContext context) {
         Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/bg.jpg'), // Add your background image in the assets folder
+              image: AssetImage('assets/images/bg.jpg'), 
               fit: BoxFit.cover,
             ),
           ),

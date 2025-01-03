@@ -38,8 +38,8 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
     return Scaffold(
       body: _sections[_selectedIndex], // Display the selected section
       bottomNavigationBar: Container(
-        color: const Color.fromARGB(255, 28, 15, 21), // Background color
-        padding: const EdgeInsets.symmetric(vertical: 8), // Padding for the bar
+        color: const Color.fromARGB(255, 28, 15, 21), 
+        padding: const EdgeInsets.symmetric(vertical: 8), //
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [

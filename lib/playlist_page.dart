@@ -4,46 +4,91 @@ import 'flask/movie_services.dart';
 class PlaylistCard extends StatelessWidget {
   final String playlistName;
   final VoidCallback onTap;
+  final int itemCount;
 
   const PlaylistCard({
     super.key,
     required this.playlistName,
     required this.onTap,
+    this.itemCount = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-      elevation: 8, // Added elevation for a shadow effect
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
+      elevation: 12,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          height: 120, // Fixed height for consistency
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
           decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 28, 15, 21),
-            borderRadius: BorderRadius.circular(15),
+            gradient: LinearGradient(
+              colors: [
+                const Color.fromARGB(255, 28, 15, 21),
+                const Color.fromARGB(255, 45, 25, 35),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
-                blurRadius: 6,
-                offset: const Offset(0, 4), // Shadow direction
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              playlistName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2, // Added spacing for a cleaner look
+          child: Row(
+            children: [
+              // Playlist Icon
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.playlist_play_rounded,
+                  color: Colors.white,
+                  size: 40,
+                ),
               ),
-            ),
+              const SizedBox(width: 20),
+              // Playlist Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      playlistName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Oswald',
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+              // Arrow Icon
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withOpacity(0.7),
+                size: 24,
+              ),
+            ],
           ),
         ),
       ),
@@ -63,8 +108,8 @@ class MovieListOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
+        topLeft: Radius.circular(30),
+        topRight: Radius.circular(30),
       ),
       child: Stack(
         children: [
@@ -77,7 +122,7 @@ class MovieListOverlay extends StatelessWidget {
                   fit: BoxFit.cover,
                   alignment: Alignment.centerLeft,
                   colorFilter: ColorFilter.mode(
-                    Colors.white.withOpacity(0.8),
+                    Colors.white.withOpacity(0.85),
                     BlendMode.lighten,
                   ),
                 ),
@@ -85,70 +130,144 @@ class MovieListOverlay extends StatelessWidget {
             ),
           ),
           // Content Container
-          Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.75,
-            ),
-            child: FutureBuilder<List<Map<String, dynamic>>>( // Fetch items for the playlist
-              future: fetchItemsForPlaylist(playlistName),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No movies available',
-                      style: TextStyle(color: Colors.black),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Playlist Header
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.playlist_play_rounded,
+                      color: Colors.white,
+                      size: 40,
                     ),
-                  );
-                } else {
-                  final movies = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: movies.length,
-                    itemBuilder: (context, index) {
-                      final movie = movies[index];
-                      return Card(
-                        margin: const EdgeInsets.all(8),
-                        color: Colors.black.withOpacity(0.6),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ListTile(
-                          horizontalTitleGap: 3,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                          leading: movie['image_url'] != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    movie['image_url'],
-                                    width: 50,
-                                    height: 150,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : const Icon(Icons.movie, size: 40, color: Colors.white),
-                          title: Padding(
-                            padding: const EdgeInsets.only(left: 10),
-                            child: Text(
-                              movie['song'] ?? movie['title'], // Song name if available, otherwise fallback to title
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                    const SizedBox(width: 15),
+                    Text(
+                      playlistName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Oswald',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Movies List
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.7,
+                ),
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: fetchItemsForPlaylist(playlistName),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.playlist_remove,
+                                size: 70, color: Colors.black.withOpacity(0.5)),
+                            const SizedBox(height: 15),
+                            const Text(
+                              'No movies in this playlist',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 20,
                                 fontFamily: 'Oswald',
-                                fontSize: 22,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
+                          ],
                         ),
                       );
-                    },
-                  );
-                }
-              },
-            ),
+                    } else {
+                      final movies = snapshot.data!;
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        itemCount: movies.length,
+                        itemBuilder: (context, index) {
+                          final movie = movies[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 15,
+                              vertical: 6,
+                            ),
+                            color: Colors.black.withOpacity(0.7),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(12),
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: movie['image_url'] != null
+                                    ? Image.network(
+                                        movie['image_url'],
+                                        width: 60,
+                                        height: 90,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        width: 60,
+                                        height: 90,
+                                        color: Colors.grey[800],
+                                        child: const Icon(Icons.movie,
+                                            color: Colors.white70, size: 30),
+                                      ),
+                              ),
+                              title: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      movie['song'] ?? movie['title'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Oswald',
+                                        fontSize: 22,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (movie['artist'] != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          movie['artist'],
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.7),
+                                            fontFamily: 'Oswald',
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -189,64 +308,95 @@ class _PlaylistPageState extends State<PlaylistPage> {
               ),
             ),
           ),
-          Container(color: Colors.black.withOpacity(0.5)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Playlists Heading
-              Padding(
-                padding: const EdgeInsets.only(top: 25, left: 20),
-                child: Text(
-                  'Playlists',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Oswald',
+          Container(color: Colors.black.withOpacity(0.6)),
+          // Content
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(25, 20, 25, 30),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Playlists',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Oswald',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Expanded(
-                child: FutureBuilder<List<String>>(
-                  future: fetchExistingPlaylists(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return const Center(
-                        child: Text(
-                          'Failed to load playlists',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      );
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No playlists available',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      );
-                    } else {
-                      final playlists = snapshot.data!;
-                      return ListView.builder(
-                        itemCount: playlists.length,
-                        itemBuilder: (context, index) {
-                          return PlaylistCard(
-                            playlistName: playlists[index],
-                            onTap: () => _showMovieOverlay(playlists[index]),
-                          );
-                        },
-                      );
-                    }
-                  },
+                Expanded(
+                  child: FutureBuilder<List<String>>(
+                    future: fetchExistingPlaylists(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.error_outline,
+                                  size: 70, color: Colors.white.withOpacity(0.7)),
+                              const SizedBox(height: 15),
+                              const Text(
+                                'Failed to load playlists',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontFamily: 'Oswald',
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.playlist_add,
+                                  size: 70, color: Colors.white.withOpacity(0.7)),
+                              const SizedBox(height: 15),
+                              const Text(
+                                'No playlists yet',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontFamily: 'Oswald',
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        final playlists = snapshot.data!;
+                        return ListView.builder(
+                          padding: const EdgeInsets.only(top: 10),
+                          itemCount: playlists.length,
+                          itemBuilder: (context, index) {
+                            return PlaylistCard(
+                              playlistName: playlists[index],
+                              onTap: () => _showMovieOverlay(playlists[index]),
+                              itemCount: index + 1, // Example count, replace with actual count
+                            );
+                          },
+                        );
+                      }
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 }
-

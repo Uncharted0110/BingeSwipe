@@ -17,34 +17,29 @@ class _AnalyticsPageState extends State<AnalyticsPage> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this); // Two tabs: Movies and Songs
-    _tabController.addListener(_tabChangeListener); // Listen for tab changes
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_tabChangeListener); 
   }
 
-  // Listener for tab changes
   void _tabChangeListener() {
-    setState(() {}); // Trigger rebuild when tab changes
+    setState(() {});
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_tabChangeListener); // Remove listener when widget is disposed
+    _tabController.removeListener(_tabChangeListener);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final genreAnalyticsProvider = Provider.of<GenreAnalyticsProvider>(context);
-
-    // Get the selected genre analytics (either for movies or songs)
     final selectedAnalytics = _tabController.index == 0
         ? genreAnalyticsProvider.movieGenreFrequency
         : genreAnalyticsProvider.songGenreFrequency;
 
     final sortedGenres = selectedAnalytics.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-
-    // Custom color palette with vibrant colors
     final List<Color> colorPalette = [
       Colors.teal.shade300,
       Colors.orange.shade300,
@@ -61,7 +56,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> with SingleTickerProvider
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Center( // Centering the text
+        title: Center(
           child: const Text(
             'Genre Insights',
             style: TextStyle(color: Colors.white, fontFamily: 'Oswald', fontSize: 40),
